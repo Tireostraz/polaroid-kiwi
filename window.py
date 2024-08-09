@@ -9,7 +9,7 @@ class Window:
         self.root.geometry(f"{width}x{height}")
         self.root.resizable(resizable[0], resizable[1])
 
-        self.root.bind("Escape", self._close)
+        self.root.bind("<Escape>", self._close)
    
     def run(self):
         self.drawMenu()

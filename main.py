@@ -1,6 +1,6 @@
 from window import Window
-from child_window import childWindow
 
 PyPhotoEditor = Window(500, 500)
+PyPhotoEditor.createChildWindow(200, 200)
 PyPhotoEditor.run()
 
