@@ -1,10 +1,13 @@
 from tkinter import *
+from child_window import ChildWindow
 
 class Window:
-    def __init__(self):
+    def __init__(self, width, height, resizable=(False, False)):
         self.root = Tk()
         self.root.title("Photo Editor")
         #self.root.iconbitmap("icons/icon.img")
+        self.root.geometry(f"{width}x{height}")
+        self.root.resizable(resizable[0], resizable[1])
 
         self.root.bind("Escape", self._close)
    
@@ -23,5 +26,10 @@ class Window:
     def drawWigets(self):
         pass
 
+    def createChildWindow(self, width, height, title = "New child Window", resizable=(False, False)):
+        ChildWindow(self.root, width, height, title, resizable)
+
 if __name__ == "__main__":
-    Window.run()
+    window = Window (500, 200)
+    window.run()
+    window.createChildWindow(500, 400)
