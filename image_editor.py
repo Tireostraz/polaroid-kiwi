@@ -167,10 +167,9 @@ class Editor:
         #returns current_tab, path, image
         current_tab = self.img_tabs.select()
         if not current_tab:
-            return None, None, None
-        tab_index = self.img_tabs.index(current_tab)
-        path, image = self.opened_images[tab_index]
-        return current_tab, path, image
+            return None
+        tab_index = self.img_tabs.index(current_tab)        
+        return self.opened_images[tab_index]
         
     def open_image(self):
         image_paths = fd.askopenfilenames(filetypes=(("Images", "*.jpg; *.png; *.jpeg"), ))
@@ -193,8 +192,9 @@ class Editor:
         image_panel.image = image_tk
         image_panel.create_image(0, 0, image=image_tk, anchor="nw")
         image_panel.pack(expand="yes")
+        image_info.canvas = image_panel
 
-        self.img_tabs.add(image_tab, text=f"{image_path.split("/")[-1]}")
+        self.img_tabs.add(image_tab, text=image_info.image_name())
         self.img_tabs.select(image_tab)
 
     def update_image(self, current_tab, image):
