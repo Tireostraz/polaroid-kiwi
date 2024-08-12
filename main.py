@@ -1,6 +1,6 @@
-from window import Window
+from image_editor import Editor
 
-PyPhotoEditor = Window(500, 500)
-PyPhotoEditor.createChildWindow(200, 200)
-PyPhotoEditor.run()
+PhotoEditor = Editor(500, 500)
+#PyPhotoEditor.createChildWindow(200, 200)
+PhotoEditor.run()
 
