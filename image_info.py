@@ -7,6 +7,7 @@ class ImageInfo(ImageEdit):
         
         self.path = path
         self.tab = tab
+        
     @property
     def unsaved(self) -> bool: #Возвращает true если картинка изменена (добавилась "*") и не сохранена
         return self.path[-1] == "*"

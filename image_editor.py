@@ -7,10 +7,11 @@ from PIL import Image, ImageTk
 import os
 
 from image_info import ImageInfo
-
+from sheetA4 import SheetA4
 
 class Editor:
-    def __init__(self, width, height, resizable=(True, True)):        
+    def __init__(self, width, height, resizable=(True, True)):     
+        self.sheet = SheetA4()
         self.root = Tk()
         x, y = self.find_screen_center(width, height)
         self.root.geometry(f"{width}x{height}+{int(x)}+{int(y)}")
@@ -23,20 +24,20 @@ class Editor:
         self.opened_images = []
         self.radio_choice = IntVar(value=0)
         self.working_rectangle = None
-
+        self.thumbnail_rectangle = None
     def find_screen_center(self, width, height):
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         x = (screen_width/2) - (width/2)
         y = (screen_height/2) - (height/2)
-        return x, y    
+        return x, y
 
     def run(self):
         self.drawMenu()
         self.drawWigets()
         self.binds()
-        self.root.mainloop() 
-    
+        self.root.mainloop()
+
     def binds(self):
         self.root.bind("<Escape>", self._close)
         #self.root.bind("<r>", lambda: self.rotate_image(90))
@@ -47,7 +48,7 @@ class Editor:
             self.root.destroy()
         else:
             return
-    
+
     def drawMenu(self):
         menu_bar = Menu(self.root)      
 
@@ -57,6 +58,7 @@ class Editor:
         file_bar.add_command(label="Open", command=self.open_image)
         file_bar.add_command(label="Save", command=self.save_current_image)
         file_bar.add_command(label="Save as...", command=self.save_image_as)
+        file_bar.add_command(label="Export all as PDF", command=self.save_image_as)
         file_bar.add_separator()
         file_bar.add_command(label="Exit", command=self._close)
 
@@ -71,12 +73,13 @@ class Editor:
 
     def drawWigets(self):
         top_frame = Frame(self.root)
-        top_frame.pack()
+        top_frame.pack(expand=1, anchor="center")
+        Label(top_frame, text="Scale factor")
         bottom_frame = Frame(self.root)
-        bottom_frame.pack()
+        bottom_frame.pack(expand=1, anchor="center")
         self.img_tabs = Notebook(top_frame)
         self.img_tabs.enable_traversal()
-        self.img_tabs.pack(fill="both", expand=1)
+        self.img_tabs.pack(fill="none", expand=1, anchor="center")
         Radiobutton(bottom_frame, variable=self.radio_choice, value=0, text="Standard").pack(side="left")
         Radiobutton(bottom_frame, variable=self.radio_choice, value=1, text="Mini").pack(side="left")
         Radiobutton(bottom_frame, variable=self.radio_choice, value=2, text="Square").pack(side="left")
@@ -84,32 +87,38 @@ class Editor:
         Radiobutton(bottom_frame, variable=self.radio_choice, value=4, text="10x15").pack(side="left")
         Button(bottom_frame, text="Draw frame", command=self.draw_frame).pack(side="left")
         Button(bottom_frame, text="Crop image", command=self.crop_image).pack(side="left")
+        Button(bottom_frame, text="Create polaroid", command=self.create_polaroid).pack(side="left")
 
-    
-    def get_ratio(self):
+    def get_format(self):
         if self.radio_choice.get() == 0: #Standard polaroid
-            ratio = 2/3
-            return ratio
+            ratio = 5/6
+            format = "Standard"
+            return [ratio, format]
         elif self.radio_choice.get() == 1: #Mini
             ratio = 2/3
-            return ratio
+            format = "Mini"
+            return [ratio, format]
         elif self.radio_choice.get() == 2: #Square
             ratio = 1
-            return ratio
+            format = "Square"
+            return [ratio, format]
         elif self.radio_choice.get() == 3: #Max
-            ratio = 2/3
-            return ratio
+            ratio = 20/21
+            format = "Max"
+            return [ratio, format]
         elif self.radio_choice.get() == 4: #10x15
             ratio = 2/3
-            return ratio
+            format = "10x15"
+            return [ratio, format]
         
     def draw_frame(self):
-        image = self.current_image()
-        if not image:
+        image_info = self.current_image()
+        if not image_info:
             return
-        x0, y0, x1, y1 = self.frame_size(image.image)
+        
+        x0, y0, x1, y1 = self.frame_size(image_info.thumbnail)
 
-        canvas = image.canvas
+        canvas = image_info.canvas
         canvas.delete(self.working_rectangle)
         self.working_rectangle = canvas.create_rectangle(x0, y0, x1, y1, dash=(10, 10), fill='cyan', width=1, stipple="gray25")        
         canvas.focus_set()
@@ -137,20 +146,26 @@ class Editor:
      
     def frame_size(self, image):
         img_width, img_height = image.size
-        ratio = self.get_ratio()
-        if img_width/img_height < ratio:
+        ratio = self.get_format()
+        if img_width/img_height < ratio[0]:
             frame_width = img_width
-            frame_height = img_width/ratio
-        elif img_width/img_height >= ratio:
+            frame_height = img_width/ratio[0]
+        elif img_width/img_height >= ratio[0]:
             frame_height = img_height
-            frame_width = img_height * ratio
+            frame_width = img_height * ratio[0]
         x_start = img_width/2 - frame_width/2
         y_start = img_height/2 - frame_height/2
         x_end = img_width/2 + frame_width/2
         y_end = img_height/2 + frame_height/2
         return x_start, y_start, x_end, y_end
-
-
+    
+    def create_polaroid(self):
+        image = self.current_image()
+        # format = self.get_format()
+        image.resize_to_format()
+        self.update_image(image)
+        # self.sheet.concat_image(image, format[1])
+        
     def current_image(self):
         current_tab = self.img_tabs.select()
         if not current_tab:
@@ -171,10 +186,10 @@ class Editor:
 
         image_tk = image_info.image_tk
                
-        image_panel = Canvas(image_tab, width=image.width, height=image.height, bd=0, highlightthickness=0)
+        image_panel = Canvas(image_tab, width=500, height=500, bd=0, highlightthickness=0)
         image_panel.image = image_tk
         image_panel.create_image(0, 0, image=image_tk, anchor="nw")
-        image_panel.pack(expand="yes")
+        image_panel.pack(expand="no", anchor="center")
         image_info.canvas = image_panel
 
         self.img_tabs.add(image_tab, text=image_info.image_name())
@@ -197,8 +212,10 @@ class Editor:
         image = self.current_image()
         if not image:
             return
-        print(*image.canvas.coords(self.working_rectangle))
         image.crop(*image.canvas.coords(self.working_rectangle))
+        format = self.get_format()
+        format = format[1]
+        image.set_format(format)
         image.unsaved = True
         self.update_image(image)
         
