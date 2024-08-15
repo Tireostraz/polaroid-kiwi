@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import filedialog as fd
 from tkinter import messagebox as mb
 from tkinter.ttk import Notebook
-from child_window import ChildWindow
+from PDF_view_window import ChildWindow
 from PIL import Image, ImageTk
 import os
 
@@ -10,8 +10,7 @@ from image_info import ImageInfo
 from sheetA4 import SheetA4
 
 class Editor:
-    def __init__(self, width, height, resizable=(True, True)):     
-        self.sheet = SheetA4()
+    def __init__(self, width, height, resizable=(True, True)):
         self.root = Tk()
         x, y = self.find_screen_center(width, height)
         self.root.geometry(f"{width}x{height}+{int(x)}+{int(y)}")
@@ -22,9 +21,11 @@ class Editor:
         self.root.title("Photo Editor")
         self.root.iconbitmap("resources/icon.ico")
         self.opened_images = []
+        self.opened_sheets = []
         self.radio_choice = IntVar(value=0)
         self.working_rectangle = None
         self.thumbnail_rectangle = None
+
     def find_screen_center(self, width, height):
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
@@ -58,7 +59,7 @@ class Editor:
         file_bar.add_command(label="Open", command=self.open_image)
         file_bar.add_command(label="Save", command=self.save_current_image)
         file_bar.add_command(label="Save as...", command=self.save_image_as)
-        file_bar.add_command(label="Export all as PDF", command=self.save_image_as)
+        file_bar.add_command(label="Export all as PDF", command=self.export_all)
         file_bar.add_separator()
         file_bar.add_command(label="Exit", command=self._close)
 
@@ -253,7 +254,41 @@ class Editor:
             image.unsaved = False
             image.image.save(image.path)
             self.img_tabs.add(image.tab, text=image.path)
+        
+    def export_all(self):
+        formats = []
+        for image in self.opened_images:
+            if image.format not in formats:
+                formats.append(image.format)
+        print(formats)
+        for format in formats:
+            sheet = SheetA4(format)
+            self.opened_sheets.append(sheet)
+            for image in self.opened_images:
+                if format == image.format and sheet.occupied == False:
+                    sheet.add_image_on_sheet(image.image, format)
+                elif format == image.format and sheet.occupied:
+                    sheet = SheetA4(format)
+                    self.opened_sheets.append(sheet)
+                    sheet.add_image_on_sheet(image.image, format)
+        
+        self.save_sheets_as_pdf()
 
+    def save_sheets_as_pdf(self):
+        i = 0
+        image = self.current_image()
+        old_path = image.full_path(True)
+        new_path = fd.asksaveasfilename(initialdir=old_path, filetypes=(("Portable Document Format", "*.pdf"), ))
+        if not new_path:
+            return
+        new_path, new_ext = os.path.splitext(new_path)
+        print(f"New path: {new_path}, New ext: {new_ext}")
+        for sheet in self.opened_sheets:
+            print(new_path + f"_{i}" + new_ext)
+            sheet.sheet.save(new_path + f"_{i}" + new_ext)
+            sheet.sheet.close()
+            del sheet.sheet
+            i +=1
 
 if __name__ == "__main__":
     window = Editor (800, 800)  

@@ -15,7 +15,6 @@ class ImageEdit:
         self.DPM = self.DPI/25.4 # pixels in mm
 
         self.scale_factor = 500 / max(self.image.width, self.image.height)
-        print(self.DPM)
     
     def set_format (self, format):
         self.format = format
@@ -35,10 +34,8 @@ class ImageEdit:
             bottom = int(16 * self.DPM)
             image_width = int(80 * self.DPM)
             image_heigth = int(84 * self.DPM)
-        print(top, left, bottom, right)
         self.image = self.image.resize((image_width, image_heigth))
         self.add_padding(top, left, bottom, right)
-
     
     def add_padding(self, top, left, bottom, right):
         new_image = Image.new("RGB", (self.image.width + left + right, self.image.height + top + bottom), (255, 255, 255))
