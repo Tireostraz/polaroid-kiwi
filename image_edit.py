@@ -5,9 +5,8 @@ class ImageEdit:
         self.original_image = image
         self.image = image.copy()
         self.thumbnail = image.copy()
-        thumbnail_width = 500
-        thumbnail_heigth = 500
-        self.thumbnail.thumbnail((thumbnail_width, thumbnail_heigth))
+        self.thumbneil_size = (500, 500)
+        self.thumbnail.thumbnail(self.thumbneil_size)
         self.image_tk = ImageTk.PhotoImage(self.thumbnail)
         self.canvas = None
         self.format = None
@@ -42,13 +41,15 @@ class ImageEdit:
         new_image.paste(self.image, (left, top))
         self.image = new_image.copy()
         self.thumbnail = new_image.copy()
-        self.thumbnail.thumbnail((500, 500))
+        self.thumbnail.thumbnail(self.thumbneil_size)
 
     def image_tk(self):
         return ImageTk.PhotoImage(self.image)
 
     def rotate(self, degrees):
-        self.image = self.image.rotate(degrees)
+        self.image = self.image.rotate(degrees, expand=True)
+        self.thumbnail = self.image.copy()
+        self.thumbnail.thumbnail(self.thumbneil_size)
 
     def update_image_on_canvas(self):
         if self.canvas is None:
@@ -58,7 +59,9 @@ class ImageEdit:
         image_tk = self.image_tk
         self.canvas.delete("all")
         self.canvas.configure(width=self.thumbnail.width, height=self.thumbnail.height)
+        
         self.canvas.create_image(0, 0, image=image_tk, anchor="nw")
+        # self.canvas.create_image(self.canvas.winfo_width()/2-self.thumbnail.width/2, self.canvas.winfo_height()/2-self.thumbnail.height/2, image=image_tk, anchor="nw")
         self.canvas.image = image_tk
     
     def crop(self, x0, y0, x1, y1):

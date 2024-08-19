@@ -41,6 +41,8 @@ class Editor:
 
     def binds(self):
         self.root.bind("<Escape>", self._close)
+        self.root.bind("<Return>", self.create_polaroid)
+
         #self.root.bind("<r>", lambda: self.rotate_image(90))
 
     def _close(self, event=None): 
@@ -61,6 +63,7 @@ class Editor:
         file_bar.add_command(label="Save as...", command=self.save_image_as)
         file_bar.add_command(label="Export all as PDF", command=self.export_all)
         file_bar.add_separator()
+        file_bar.add_command(label="Close", command=self.close_image)
         file_bar.add_command(label="Exit", command=self._close)
 
         #Edit менюбар        
@@ -160,8 +163,10 @@ class Editor:
         y_end = img_height/2 + frame_height/2
         return x_start, y_start, x_end, y_end
     
-    def create_polaroid(self):
+    def create_polaroid(self, event=None):
         image = self.current_image()
+        if not image:
+            return
         # format = self.get_format()
         image.resize_to_format()
         self.update_image(image)
@@ -179,18 +184,26 @@ class Editor:
         for image_path in image_paths:
             self.add_new_image(image_path)
 
+    def close_image(self):
+        image_info = self.current_image()
+        tab_index = self.img_tabs.index(image_info.tab)
+        image_info.image.close()
+        del self.opened_images[tab_index]
+        self.img_tabs.forget(image_info.tab)
+
     def add_new_image(self, image_path):
         image = Image.open(image_path)
         image_tab = Frame(self.img_tabs)
         image_info = ImageInfo(image, image_path, image_tab)
         self.opened_images.append(image_info)
-
+        
         image_tk = image_info.image_tk
-               
-        image_panel = Canvas(image_tab, width=500, height=500, bd=0, highlightthickness=0)
+
+        image_panel = Canvas(image_tab, width=image_info.thumbnail.width, height=image_info.thumbnail.height, bd=0, background="cyan", highlightthickness=0)
+        image_panel.pack()
         image_panel.image = image_tk
-        image_panel.create_image(0, 0, image=image_tk, anchor="nw")
-        image_panel.pack(expand="no", anchor="center")
+
+        image_panel.create_image(0, 0, image=image_tk, anchor="nw")        
         image_info.canvas = image_panel
 
         self.img_tabs.add(image_tab, text=image_info.image_name())
@@ -204,7 +217,6 @@ class Editor:
         image = self.current_image()
         if not image:
             return
-        
         image.rotate(degrees)
         image.unsaved = True
         self.update_image(image)
