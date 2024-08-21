@@ -5,13 +5,16 @@ from tkinter.ttk import Notebook
 from PDF_view_window import ChildWindow
 from PIL import Image, ImageTk
 import os
+import customtkinter
 
 from image_info import ImageInfo
 from sheetA4 import SheetA4
 
 class Editor:
     def __init__(self, width, height, resizable=(True, True)):
-        self.root = Tk()
+        self.root = customtkinter.CTk()
+        customtkinter.set_appearance_mode("light")
+        customtkinter.set_default_color_theme("dark-blue")
         x, y = self.find_screen_center(width, height)
         self.root.geometry(f"{width}x{height}+{int(x)}+{int(y)}")
         self.root.resizable(resizable[0], resizable[1])
@@ -19,7 +22,7 @@ class Editor:
     
     def init(self):
         self.root.title("Photo Editor")
-        self.root.iconbitmap("resources/icon.ico")
+        self.root.iconbitmap("resources/icons/icon.ico")
         self.opened_images = []
         self.opened_sheets = []
         self.radio_choice = IntVar(value=0)
@@ -76,22 +79,32 @@ class Editor:
         self.root.configure(menu=menu_bar)
 
     def drawWigets(self):
-        top_frame = Frame(self.root)
-        top_frame.pack(expand=1, anchor="center")
-        Label(top_frame, text="Scale factor")
-        bottom_frame = Frame(self.root)
-        bottom_frame.pack(expand=1, anchor="center")
+        top_frame = customtkinter.CTkFrame(self.root, width=600, height=600)
+        top_frame.pack(expand=True)
+        # top_frame.grid(row=0, column=0, sticky="n")
+        bottom_frame = customtkinter.CTkFrame(self.root)
+        bottom_frame.pack()
+        # bottom_frame.grid(row=1, column=0, sticky="esw")
         self.img_tabs = Notebook(top_frame)
         self.img_tabs.enable_traversal()
         self.img_tabs.pack(fill="none", expand=1, anchor="center")
-        Radiobutton(bottom_frame, variable=self.radio_choice, value=0, text="Standard").pack(side="left")
-        Radiobutton(bottom_frame, variable=self.radio_choice, value=1, text="Mini").pack(side="left")
-        Radiobutton(bottom_frame, variable=self.radio_choice, value=2, text="Square").pack(side="left")
-        Radiobutton(bottom_frame, variable=self.radio_choice, value=3, text="Max").pack(side="left")
-        Radiobutton(bottom_frame, variable=self.radio_choice, value=4, text="10x15").pack(side="left")
-        Button(bottom_frame, text="Draw frame", command=self.draw_frame).pack(side="left")
-        Button(bottom_frame, text="Crop image", command=self.crop_image).pack(side="left")
-        Button(bottom_frame, text="Create polaroid", command=self.create_polaroid).pack(side="left")
+        self.root.rowconfigure(0, weight=1)
+        self.root.columnconfigure(0, weight=1)
+        self.root.rowconfigure(1, weight=1)
+        self.root.columnconfigure(1, weight=1)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=0, text="Standard").grid(row=0, column=0)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=1, text="Mini").grid(row=0, column=1)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=2, text="Square").grid(row=0, column=2)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=3, text="Max").grid(row=0, column=3)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=4, text="10x15").grid(row=0, column=4)
+        customtkinter.CTkButton(bottom_frame, text="Draw frame", command=self.draw_frame).grid(row=1, column=1)
+        customtkinter.CTkButton(bottom_frame, text="Crop image", command=self.crop_image).grid(row=1, column=2)
+        customtkinter.CTkButton(bottom_frame, text="Create polaroid", command=self.create_polaroid).grid(row=1, column=3)
+        rotate_left_img = ImageTk.PhotoImage(Image.open(r".\resources\icons\rotate_left.png"))
+        rotate_right_img = ImageTk.PhotoImage(Image.open(r".\resources\icons\rotate_right.png"))
+        # rotate_left_img = PhotoImage(file=r'resources\icons\rotate-left.jpg')
+        customtkinter.CTkButton(bottom_frame, text="Rotate left", image=rotate_left_img, compound="left", command=lambda: self.rotate_image(90)).grid(row=2, column=1)
+        customtkinter.CTkButton(bottom_frame, text="Rotate right", image=rotate_right_img, command=lambda: self.rotate_image(-90)).grid(row=2, column=3)
 
     def get_format(self):
         if self.radio_choice.get() == 0: #Standard polaroid
@@ -303,5 +316,5 @@ class Editor:
             i +=1
 
 if __name__ == "__main__":
-    window = Editor (800, 800)  
+    window = Editor (700, 700, (False, False))  
     window.run()
