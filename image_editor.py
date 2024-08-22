@@ -28,6 +28,7 @@ class Editor:
         self.radio_choice = IntVar(value=0)
         self.working_rectangle = None
         self.thumbnail_rectangle = None
+        self.DPI = 200
 
     def find_screen_center(self, width, height):
         screen_width = self.root.winfo_screenwidth()
@@ -297,23 +298,29 @@ class Editor:
                     self.opened_sheets.append(sheet)
                     sheet.add_image_on_sheet(image.image, format)
         
-        self.save_sheets_as_pdf()
+        self.save_sheets_as_pdf(formats)
 
-    def save_sheets_as_pdf(self):
-        i = 0
+    def save_sheets_as_pdf(self, formats):
         image = self.current_image()
         old_path = image.full_path(True)
         new_path = fd.asksaveasfilename(initialdir=old_path, filetypes=(("Portable Document Format", "*.pdf"), ))
         if not new_path:
             return
         new_path, new_ext = os.path.splitext(new_path)
+        if not new_ext:
+            new_ext = ".pdf"
         print(f"New path: {new_path}, New ext: {new_ext}")
+        for format in formats:
+            sheets_of_this_format = []
+            for sheet in self.opened_sheets:
+                if format == sheet.format:
+                    sheets_of_this_format.append(sheet.sheet)
+            sheets_of_this_format[0].save(f"{new_path} of {format}.pdf", save_all=True, append_images=sheets_of_this_format[1:], resolution=self.DPI)
+
         for sheet in self.opened_sheets:
-            print(new_path + f"_{i}" + new_ext)
-            sheet.sheet.save(new_path + f"_{i}" + new_ext)
             sheet.sheet.close()
-            del sheet.sheet
-            i +=1
+            del sheet
+        self.opened_sheets.clear()
 
 if __name__ == "__main__":
     window = Editor (700, 700, (False, False))  

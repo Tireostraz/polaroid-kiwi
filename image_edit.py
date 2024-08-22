@@ -12,6 +12,8 @@ class ImageEdit:
         self.format = None
         self.DPI = 200  # pixels in inch
         self.DPM = self.DPI/25.4 # pixels in mm
+        self.border_size = 1
+        self.border_color = (225, 225, 225)
 
         self.scale_factor = 500 / max(self.image.width, self.image.height)
     
@@ -35,6 +37,7 @@ class ImageEdit:
             image_heigth = int(84 * self.DPM)
         self.image = self.image.resize((image_width, image_heigth))
         self.add_padding(top, left, bottom, right)
+        self.add_border(self.border_size, self.border_color)
     
     def add_padding(self, top, left, bottom, right):
         new_image = Image.new("RGB", (self.image.width + left + right, self.image.height + top + bottom), (255, 255, 255))
@@ -42,6 +45,11 @@ class ImageEdit:
         self.image = new_image.copy()
         self.thumbnail = new_image.copy()
         self.thumbnail.thumbnail(self.thumbneil_size)
+
+    def add_border(self, border_size, border_color):
+        border = Image.new("RGB",  (self.image.width + border_size * 2, self.image.height + border_size * 2), border_color)
+        border.paste(self.image, (border_size, border_size))
+        self.image = border.copy()
 
     def image_tk(self):
         return ImageTk.PhotoImage(self.image)
@@ -58,10 +66,8 @@ class ImageEdit:
         self.image_tk = ImageTk.PhotoImage(self.thumbnail) 
         image_tk = self.image_tk
         self.canvas.delete("all")
-        self.canvas.configure(width=self.thumbnail.width, height=self.thumbnail.height)
-        
+        self.canvas.configure(width=self.thumbnail.width, height=self.thumbnail.height)        
         self.canvas.create_image(0, 0, image=image_tk, anchor="nw")
-        # self.canvas.create_image(self.canvas.winfo_width()/2-self.thumbnail.width/2, self.canvas.winfo_height()/2-self.thumbnail.height/2, image=image_tk, anchor="nw")
         self.canvas.image = image_tk
     
     def crop(self, x0, y0, x1, y1):
