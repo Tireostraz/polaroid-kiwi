@@ -5,15 +5,15 @@ class ImageEdit:
         self.original_image = image
         self.image = image.copy()
         self.thumbnail = image.copy()
-        self.thumbneil_size = (500, 500)
-        self.thumbnail.thumbnail(self.thumbneil_size)
+        self.thumbnail_size = (500, 500)
+        self.thumbnail.thumbnail(self.thumbnail_size)
         self.image_tk = ImageTk.PhotoImage(self.thumbnail)
         self.canvas = None
         self.format = None
         self.DPI = 200  # pixels in inch
         self.DPM = self.DPI/25.4 # pixels in mm
         self.border_size = 1
-        self.border_color = (225, 225, 225)
+        self.border_color = (235, 235, 235)
 
         self.scale_factor = 500 / max(self.image.width, self.image.height)
     
@@ -23,8 +23,7 @@ class ImageEdit:
     def resize_to_format(self): # dimensions in mm -> pixels (5 mm * self.DPM) = pixels
         top = left = right = int(5 * self.DPM)
         if self.format == "Standard":
-            bottom = int(17 * self.DPM)
-            
+            bottom = int(17 * self.DPM)            
             image_width = int(65 * self.DPM)
             image_heigth = int(78 * self.DPM)
         elif self.format == "Mini":
@@ -44,7 +43,7 @@ class ImageEdit:
         new_image.paste(self.image, (left, top))
         self.image = new_image.copy()
         self.thumbnail = new_image.copy()
-        self.thumbnail.thumbnail(self.thumbneil_size)
+        self.thumbnail.thumbnail(self.thumbnail_size)
 
     def add_border(self, border_size, border_color):
         border = Image.new("RGB",  (self.image.width + border_size * 2, self.image.height + border_size * 2), border_color)
@@ -57,7 +56,7 @@ class ImageEdit:
     def rotate(self, degrees):
         self.image = self.image.rotate(degrees, expand=True)
         self.thumbnail = self.image.copy()
-        self.thumbnail.thumbnail(self.thumbneil_size)
+        self.thumbnail.thumbnail(self.thumbnail_size)
 
     def update_image_on_canvas(self):
         if self.canvas is None:

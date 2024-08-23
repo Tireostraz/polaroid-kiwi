@@ -4,8 +4,10 @@ from tkinter import messagebox as mb
 from tkinter.ttk import Notebook
 from PDF_view_window import ChildWindow
 from PIL import Image, ImageTk
+from pillow_heif import register_heif_opener #for heic images
 import os
 import customtkinter
+
 
 from image_info import ImageInfo
 from sheetA4 import SheetA4
@@ -18,6 +20,7 @@ class Editor:
         x, y = self.find_screen_center(width, height)
         self.root.geometry(f"{width}x{height}+{int(x)}+{int(y)}")
         self.root.resizable(resizable[0], resizable[1])
+        register_heif_opener() #for heic images
         self.init()
     
     def init(self):
@@ -26,6 +29,7 @@ class Editor:
         self.opened_images = []
         self.opened_sheets = []
         self.radio_choice = IntVar(value=0)
+        self.checkbox_autoframe = customtkinter.StringVar(value="on")
         self.working_rectangle = None
         self.thumbnail_rectangle = None
         self.DPI = 200
@@ -98,8 +102,9 @@ class Editor:
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=2, text="Square").grid(row=0, column=2)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=3, text="Max").grid(row=0, column=3)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=4, text="10x15").grid(row=0, column=4)
+        customtkinter.CTkCheckBox(bottom_frame, text="Auto frame", onvalue="on", offvalue="off").grid(row=1, column=0)
         customtkinter.CTkButton(bottom_frame, text="Draw frame", command=self.draw_frame).grid(row=1, column=1)
-        customtkinter.CTkButton(bottom_frame, text="Crop image", command=self.crop_image).grid(row=1, column=2)
+        # customtkinter.CTkButton(bottom_frame, text="Crop image", command=self.crop_image).grid(row=1, column=2)
         customtkinter.CTkButton(bottom_frame, text="Create polaroid", command=self.create_polaroid).grid(row=1, column=3)
         rotate_left_img = ImageTk.PhotoImage(Image.open(r".\resources\icons\rotate_left.png"))
         rotate_right_img = ImageTk.PhotoImage(Image.open(r".\resources\icons\rotate_right.png"))
@@ -133,12 +138,10 @@ class Editor:
         image_info = self.current_image()
         if not image_info:
             return
-        
         x0, y0, x1, y1 = self.frame_size(image_info.thumbnail)
-
         canvas = image_info.canvas
         canvas.delete(self.working_rectangle)
-        self.working_rectangle = canvas.create_rectangle(x0, y0, x1, y1, dash=(10, 10), fill='cyan', width=1, stipple="gray25")        
+        self.working_rectangle = canvas.create_rectangle(x0, y0, x1, y1, dash=(10, 10), width=1, stipple="gray25", fill="#CCFFFF")        
         canvas.focus_set()
         canvas.bind("<Left>", self.move_left)
         canvas.bind("<Right>", self.move_right)
@@ -147,21 +150,49 @@ class Editor:
     
     def move_left(self, event):
         image = self.current_image()
-        image.canvas.move(self.working_rectangle, -5, 0)
+        coords = image.canvas.coords(self.working_rectangle)
+        x0 = coords[0]
+        moveDelta = -5
+        if x0 + moveDelta >= 0:
+            image.canvas.move(self.working_rectangle, moveDelta, 0)
+        else:
+            moveDelta = 0 - x0
+            image.canvas.move(self.working_rectangle, moveDelta, 0)
+
 
     def move_right(self, event):
         image = self.current_image()
-        image.canvas.move(self.working_rectangle, 5, 0)
+        coords = image.canvas.coords(self.working_rectangle)
+        x1 = coords[2]
+        moveDelta = 5
+        if x1 + moveDelta <= image.thumbnail.width:
+            image.canvas.move(self.working_rectangle, moveDelta, 0)
+        else:
+            moveDelta = image.thumbnail.width - x1
+            image.canvas.move(self.working_rectangle, moveDelta, 0)
 
     def move_up(self, event):
         image = self.current_image()
-        image.canvas.move(self.working_rectangle, 0, -5)
+        coords = image.canvas.coords(self.working_rectangle)
+        y0 = coords[1]
+        moveDelta = -5
+        if y0 + moveDelta >= 0:
+            image.canvas.move(self.working_rectangle, 0, moveDelta)
+        else:
+            moveDelta = 0 - y0
+            image.canvas.move(self.working_rectangle, 0, moveDelta)
 
     def move_down(self, event):
         image = self.current_image()
-        image.canvas.move(self.working_rectangle, 0, 5)
+        coords = image.canvas.coords(self.working_rectangle)
+        y0 = coords[3]
+        moveDelta = 5
+        if y0 + moveDelta <= image.thumbnail.height:
+            image.canvas.move(self.working_rectangle, 0, moveDelta)
+        else:
+            moveDelta = image.thumbnail.height - y0
+            image.canvas.move(self.working_rectangle, 0, moveDelta)
         
-     
     def frame_size(self, image):
         img_width, img_height = image.size
         ratio = self.get_format()
@@ -179,12 +210,12 @@ class Editor:
     
     def create_polaroid(self, event=None):
         image = self.current_image()
+        self.crop_image()
         if not image:
             return
-        # format = self.get_format()
         image.resize_to_format()
         self.update_image(image)
-        # self.sheet.concat_image(image, format[1])
+        self.img_tabs.focus_set()
         
     def current_image(self):
         current_tab = self.img_tabs.select()
@@ -194,7 +225,7 @@ class Editor:
         return self.opened_images[tab_index]
         
     def open_image(self):
-        image_paths = fd.askopenfilenames(filetypes=(("Images", "*.jpg; *.png; *.jpeg"), ))
+        image_paths = fd.askopenfilenames(filetypes=(("Images", "*.jpg *.png *.jpeg *.heic *.webp"), ))
         for image_path in image_paths:
             self.add_new_image(image_path)
 
@@ -255,7 +286,7 @@ class Editor:
         old_path, old_ext = os.path.splitext(image_path)
         if old_path[-1] == "*":
             old_ext = old_ext[:-1]        
-        new_path = fd.asksaveasfilename(initialdir=old_path, filetypes=(("Images", "*.jpg; *.png; *.jpeg"), ))
+        new_path = fd.asksaveasfilename(initialdir=old_path, filetypes=(("Images", "*.jpg; *.png; *.jpeg *.heic"), ))
         if not new_path:
             return
         new_path, new_ext = os.path.splitext(new_path)
