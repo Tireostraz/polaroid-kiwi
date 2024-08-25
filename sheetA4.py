@@ -1,11 +1,12 @@
 from PIL import Image, ImageTk
 
 class SheetA4:
-    def __init__(self, format, DPI=200):
+    def __init__(self, format, DPI=300, bg_color=(255, 255, 255)):
         self.DPI = DPI  # pixels in inch
         self.DPM = self.DPI/25.4 # pixels in mm
         self.format = format
-        self.sheet = Image.new("RGB", (int(297 * self.DPM), int(210 * self.DPM)), (255, 255, 255))
+        self.bg_color = bg_color
+        self.sheet = Image.new("RGB", (int(297 * self.DPM), int(210 * self.DPM)), self.bg_color)
         sheet_thumbnail = self.sheet.copy()
         self.MAX_SIZE = (500, 500)
         sheet_thumbnail.thumbnail(self.MAX_SIZE)

@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import filedialog as fd
 from tkinter import messagebox as mb
 from tkinter.ttk import Notebook
+from tkinter import colorchooser
 from PDF_view_window import ChildWindow
 from PIL import Image, ImageTk
 from pillow_heif import register_heif_opener #for heic images
@@ -32,7 +33,8 @@ class Editor:
         self.checkbox_autoframe = customtkinter.StringVar(value="on")
         self.working_rectangle = None
         self.thumbnail_rectangle = None
-        self.DPI = 200
+        self.DPI = 300
+        self.polaroid_bg_color = (255, 255, 255)
 
     def find_screen_center(self, width, height):
         screen_width = self.root.winfo_screenwidth()
@@ -80,6 +82,13 @@ class Editor:
         rotate_bar = Menu(edit_bar, tearoff=0)
         edit_bar.add_cascade(label="Rotate", menu=rotate_bar)
         rotate_bar.add_command(label="Rotate left 90", command=lambda: self.rotate_image(90))
+
+        #Options menubar
+        options_bar = Menu(menu_bar, tearoff=0)
+        menu_bar.add_cascade(label="Options", menu=options_bar)
+        pick_color = Menu(options_bar, tearoff=0)
+        options_bar.add_cascade(label="Pick color of...", menu=pick_color)
+        pick_color.add_command(label="Pick color of polaroid background", command=self.pick_color_of_polaroid)
 
         self.root.configure(menu=menu_bar)
 
@@ -209,11 +218,11 @@ class Editor:
         return x_start, y_start, x_end, y_end
     
     def create_polaroid(self, event=None):
-        image = self.current_image()
-        self.crop_image()
+        image = self.current_image()        
         if not image:
             return
-        image.resize_to_format()
+        self.crop_image()
+        image.resize_to_format(self.polaroid_bg_color)
         self.update_image(image)
         self.img_tabs.focus_set()
         
@@ -270,7 +279,8 @@ class Editor:
         image = self.current_image()
         if not image:
             return
-        image.crop(*image.canvas.coords(self.working_rectangle))
+        x0, y0, x1, y1 = image.canvas.coords(self.working_rectangle)
+        image.crop(x0 + 1, y0 + 1, x1 - 1, y1 - 1) # x0 + 1, y0 + 1, x1 - 1, y1 - 1 reduces the frame on 1 px
         format = self.get_format()
         format = format[1]
         image.set_format(format)
@@ -352,6 +362,10 @@ class Editor:
             sheet.sheet.close()
             del sheet
         self.opened_sheets.clear()
+
+    def pick_color_of_polaroid(self):
+        color_code = colorchooser.askcolor(title="Choose color")
+        self.polaroid_bg_color = color_code[0]
 
 if __name__ == "__main__":
     window = Editor (700, 700, (False, False))  

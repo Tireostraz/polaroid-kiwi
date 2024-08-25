@@ -10,17 +10,18 @@ class ImageEdit:
         self.image_tk = ImageTk.PhotoImage(self.thumbnail)
         self.canvas = None
         self.format = None
-        self.DPI = 200  # pixels in inch
+        self.DPI = 300  # pixels in inch
         self.DPM = self.DPI/25.4 # pixels in mm
         self.border_size = 1
         self.border_color = (235, 235, 235)
+        # self.bg_color = (255, 255, 255)
 
         self.scale_factor = 500 / max(self.image.width, self.image.height)
     
     def set_format (self, format):
         self.format = format
     
-    def resize_to_format(self): # dimensions in mm -> pixels (5 mm * self.DPM) = pixels
+    def resize_to_format(self, bg_color): # dimensions in mm -> pixels (5 mm * self.DPM) = pixels
         top = left = right = int(5 * self.DPM)
         if self.format == "Standard":
             bottom = int(17 * self.DPM)            
@@ -35,11 +36,11 @@ class ImageEdit:
             image_width = int(80 * self.DPM)
             image_heigth = int(84 * self.DPM)
         self.image = self.image.resize((image_width, image_heigth))
-        self.add_padding(top, left, bottom, right)
+        self.add_padding(top, left, bottom, right, bg_color)
         self.add_border(self.border_size, self.border_color)
     
-    def add_padding(self, top, left, bottom, right):
-        new_image = Image.new("RGB", (self.image.width + left + right, self.image.height + top + bottom), (255, 255, 255))
+    def add_padding(self, top, left, bottom, right, bg_color):
+        new_image = Image.new("RGB", (self.image.width + left + right, self.image.height + top + bottom), bg_color)
         new_image.paste(self.image, (left, top))
         self.image = new_image.copy()
         self.thumbnail = new_image.copy()
