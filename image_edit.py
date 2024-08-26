@@ -35,6 +35,10 @@ class ImageEdit:
             bottom = int(16 * self.DPM)
             image_width = int(80 * self.DPM)
             image_heigth = int(84 * self.DPM)
+        elif self.format == "Square":
+            bottom = int(5 * self.DPM)
+            image_width = int(80 * self.DPM)
+            image_heigth = int(80 * self.DPM)
         self.image = self.image.resize((image_width, image_heigth))
         self.add_padding(top, left, bottom, right, bg_color)
         self.add_border(self.border_size, self.border_color)
