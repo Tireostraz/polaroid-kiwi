@@ -1,4 +1,5 @@
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageCms
+from io import BytesIO
 
 class ImageEdit:
     def __init__(self, image):
@@ -13,7 +14,7 @@ class ImageEdit:
         self.DPI = 300  # pixels in inch
         self.DPM = self.DPI/25.4 # pixels in mm
         self.border_size = 1
-        self.border_color = (235, 235, 235)
+        # self.border_color = (215, 215, 215)
         # self.bg_color = (255, 255, 255)
 
         self.scale_factor = 500 / max(self.image.width, self.image.height)
@@ -21,7 +22,7 @@ class ImageEdit:
     def set_format (self, format):
         self.format = format
     
-    def resize_to_format(self, bg_color): # dimensions in mm -> pixels (5 mm * self.DPM) = pixels
+    def resize_to_format(self, bg_color, border_color): # dimensions in mm -> pixels (5 mm * self.DPM) = pixels
         top = left = right = int(5 * self.DPM)
         if self.format == "Standard":
             bottom = int(17 * self.DPM)            
@@ -32,16 +33,20 @@ class ImageEdit:
             image_width = int(45 * self.DPM)
             image_heigth = int(67.5 * self.DPM)
         elif self.format == "Max":
-            bottom = int(16 * self.DPM)
-            image_width = int(80 * self.DPM)
-            image_heigth = int(84 * self.DPM)
+            bottom = int(15 * self.DPM) #16
+            image_width = int(80 * self.DPM) #80
+            image_heigth = int(80 * self.DPM) #84
         elif self.format == "Square":
             bottom = int(5 * self.DPM)
             image_width = int(80 * self.DPM)
             image_heigth = int(80 * self.DPM)
+        elif self.format == "Standard H":
+            bottom = int(15 * self.DPM)
+            image_width = int(90 * self.DPM)
+            image_heigth = int(55 * self.DPM)
         self.image = self.image.resize((image_width, image_heigth))
         self.add_padding(top, left, bottom, right, bg_color)
-        self.add_border(self.border_size, self.border_color)
+        self.add_border(self.border_size, border_color)
     
     def add_padding(self, top, left, bottom, right, bg_color):
         new_image = Image.new("RGB", (self.image.width + left + right, self.image.height + top + bottom), bg_color)
@@ -62,6 +67,18 @@ class ImageEdit:
         self.image = self.image.rotate(degrees, expand=True)
         self.thumbnail = self.image.copy()
         self.thumbnail.thumbnail(self.thumbnail_size)
+    
+    def convert_icc(self, icc):
+        print(self.image.info)
+        current_icc_bytes = self.image.info.get("icc_profile")
+        if not current_icc_bytes:
+            return            
+        current_icc = ImageCms.getOpenProfile(BytesIO(current_icc_bytes)).profile
+        if current_icc != icc:
+            self.image = ImageCms.profileToProfile(self.image, current_icc, icc)
+            print(self.image.info)
+            self.thumbnail = self.image.copy()
+            self.thumbnail.thumbnail(self.thumbnail_size)
 
     def update_image_on_canvas(self):
         if self.canvas is None:
@@ -83,3 +100,20 @@ class ImageEdit:
         # print(thumbnail_rectangle)
         self.image = self.image.crop(original_image_rectangle)
         self.thumbnail = self.thumbnail.crop(thumbnail_rectangle)
+    
+    def add_space(self, ratio, bg_color):
+        if self.image.width/self.image.height > ratio:
+            newImageWidth = int(self.image.width)
+            newImageHeight = int(self.image.width/ratio)
+        elif self.image.width/self.image.height <= ratio:
+            newImageWidth = int(self.image.height)
+            newImageHeight = int(self.image.height * ratio)
+        newImage = Image.new("RGB", (newImageWidth, newImageHeight), bg_color)
+        newImage.paste(self.image, (int(newImageWidth/2-self.image.width/2), int(newImageHeight/2-self.image.height/2)))
+        self.image = newImage.copy()
+        print(f"image width:{self.image.width}, new image width: {newImageWidth}")
+        print(f"image height:{self.image.height}, new image height: {newImageHeight}")
+        self.thumbnail = self.image.copy()
+        self.thumbnail.thumbnail(self.thumbnail_size)
+        
+

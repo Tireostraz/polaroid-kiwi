@@ -35,6 +35,8 @@ class Editor:
         self.thumbnail_rectangle = None
         self.DPI = 300
         self.polaroid_bg_color = (255, 255, 255)
+        self.polaroid_border_color = (225, 225, 225)
+        self.AdobeRGB = r".\resources\icc\AdobeRGB1998.icc"
 
     def find_screen_center(self, width, height):
         screen_width = self.root.winfo_screenwidth()
@@ -72,8 +74,10 @@ class Editor:
         file_bar.add_command(label="Save", command=self.save_current_image)
         file_bar.add_command(label="Save as...", command=self.save_image_as)
         file_bar.add_command(label="Export all as PDF", command=self.export_all)
+        file_bar.add_command(label="Convert ICC to AdobeRGB", command=self.convert_icc)
         file_bar.add_separator()
         file_bar.add_command(label="Close", command=self.close_image)
+        file_bar.add_command(label="Close all", command=self.close_images)
         file_bar.add_command(label="Exit", command=self._close)
 
         #Edit менюбар        
@@ -88,7 +92,8 @@ class Editor:
         menu_bar.add_cascade(label="Options", menu=options_bar)
         pick_color = Menu(options_bar, tearoff=0)
         options_bar.add_cascade(label="Pick color of...", menu=pick_color)
-        pick_color.add_command(label="Pick color of polaroid background", command=self.pick_color_of_polaroid)
+        pick_color.add_command(label="Pick color of polaroid background", command=lambda: self.pick_color_of("polaroid_bg_color"))
+        pick_color.add_command(label="Pick color of border", command=lambda: self.pick_color_of("border_color"))
 
         self.root.configure(menu=menu_bar)
 
@@ -106,21 +111,22 @@ class Editor:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(1, weight=1)
         self.root.columnconfigure(1, weight=1)
-        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=0, text="Standard").grid(row=0, column=0)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=0, text="Standard").grid(row=0, column=0, padx=2, pady=2)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=1, text="Mini").grid(row=0, column=1)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=2, text="Square").grid(row=0, column=2)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=3, text="Max").grid(row=0, column=3)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=4, text="10x15").grid(row=0, column=4)
-        customtkinter.CTkCheckBox(bottom_frame, text="Auto frame", onvalue="on", offvalue="off").grid(row=1, column=0)
-        customtkinter.CTkButton(bottom_frame, text="Draw frame", command=self.draw_frame).grid(row=1, column=1)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=5, text="Standard H").grid(row=1, column=0)
+        customtkinter.CTkCheckBox(bottom_frame, text="Auto frame", onvalue="on", offvalue="off").grid(row=2, column=0)
+        customtkinter.CTkButton(bottom_frame, text="Draw frame", command=self.draw_frame).grid(row=2, column=1, padx=2, pady=2)
         # customtkinter.CTkButton(bottom_frame, text="Crop image", command=self.crop_image).grid(row=1, column=2)
-        customtkinter.CTkButton(bottom_frame, text="Create polaroid", command=self.create_polaroid).grid(row=1, column=3)
+        customtkinter.CTkButton(bottom_frame, text="Create polaroid", command=self.create_polaroid).grid(row=2, column=3)
         rotate_left_img = ImageTk.PhotoImage(Image.open(r".\resources\icons\rotate_left.png"))
         rotate_right_img = ImageTk.PhotoImage(Image.open(r".\resources\icons\rotate_right.png"))
         # rotate_left_img = PhotoImage(file=r'resources\icons\rotate-left.jpg')
-        customtkinter.CTkButton(bottom_frame, text="Rotate left", image=rotate_left_img, compound="left", command=lambda: self.rotate_image(90)).grid(row=2, column=1)
-        customtkinter.CTkButton(bottom_frame, text="Rotate right", image=rotate_right_img, command=lambda: self.rotate_image(-90)).grid(row=2, column=3)
-
+        customtkinter.CTkButton(bottom_frame, text="Rotate left", image=rotate_left_img, compound="left", command=lambda: self.rotate_image(90)).grid(row=3, column=1, padx=2, pady=2)
+        customtkinter.CTkButton(bottom_frame, text="Rotate right", image=rotate_right_img, command=lambda: self.rotate_image(-90)).grid(row=3, column=3, padx=2, pady=2)
+        customtkinter.CTkButton(bottom_frame, text="Add space", command=self.add_space).grid(row=3, column=4)
     def get_format(self):
         if self.radio_choice.get() == 0: #Standard polaroid
             ratio = 5/6
@@ -141,6 +147,10 @@ class Editor:
         elif self.radio_choice.get() == 4: #10x15
             ratio = 2/3
             format = "10x15"
+            return [ratio, format]
+        elif self.radio_choice.get() == 5: #Standard Horizontal
+            ratio = 18/11
+            format = "Standard H"
             return [ratio, format]
         
     def draw_frame(self):
@@ -222,7 +232,7 @@ class Editor:
         if not image:
             return
         self.crop_image()
-        image.resize_to_format(self.polaroid_bg_color)
+        image.resize_to_format(self.polaroid_bg_color, self.polaroid_border_color)
         self.update_image(image)
         self.img_tabs.focus_set()
         
@@ -245,6 +255,17 @@ class Editor:
         del self.opened_images[tab_index]
         self.img_tabs.forget(image_info.tab)
 
+    def close_images(self):
+        for image_info in self.opened_images:
+            image_info.image.close()
+            self.img_tabs.forget(image_info.tab)
+        self.opened_images.clear()
+    
+    def convert_icc(self):
+        image_info = self.current_image()
+        tab_index = self.img_tabs.index(image_info.tab)
+        image_info.convert_icc(self.AdobeRGB)
+
     def add_new_image(self, image_path):
         image = Image.open(image_path)
         image_tab = Frame(self.img_tabs)
@@ -257,7 +278,7 @@ class Editor:
         image_panel.pack()
         image_panel.image = image_tk
 
-        image_panel.create_image(0, 0, image=image_tk, anchor="nw")        
+        image_panel.create_image(0, 0, image=image_tk, anchor="nw")    
         image_info.canvas = image_panel
 
         self.img_tabs.add(image_tab, text=image_info.image_name())
@@ -363,9 +384,20 @@ class Editor:
             del sheet
         self.opened_sheets.clear()
 
-    def pick_color_of_polaroid(self):
+    def add_space(self):
+        image = self.current_image()
+        format = self.get_format()
+        ratio = format[0]
+        image.add_space(ratio, self.polaroid_bg_color)
+        self.update_image(image)
+
+    def pick_color_of(self, instance):
         color_code = colorchooser.askcolor(title="Choose color")
-        self.polaroid_bg_color = color_code[0]
+        if instance == "polaroid_bg_color":
+            self.polaroid_bg_color = color_code[0]
+        elif instance == "border_color":
+            self.polaroid_border_color = color_code[0]
+
 
 if __name__ == "__main__":
     window = Editor (700, 700, (False, False))  
