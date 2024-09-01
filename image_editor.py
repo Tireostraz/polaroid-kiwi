@@ -26,7 +26,7 @@ class Editor:
     
     def init(self):
         self.root.title("Photo Editor")
-        self.root.iconbitmap("resources/icons/icon.ico")
+        # self.root.iconbitmap("resources/icons/icon.ico")
         self.opened_images = []
         self.opened_sheets = []
         self.radio_choice = IntVar(value=0)
@@ -100,10 +100,8 @@ class Editor:
     def drawWigets(self):
         top_frame = customtkinter.CTkFrame(self.root, width=600, height=600)
         top_frame.pack(expand=True)
-        # top_frame.grid(row=0, column=0, sticky="n")
         bottom_frame = customtkinter.CTkFrame(self.root)
         bottom_frame.pack()
-        # bottom_frame.grid(row=1, column=0, sticky="esw")
         self.img_tabs = Notebook(top_frame)
         self.img_tabs.enable_traversal()
         self.img_tabs.pack(fill="none", expand=1, anchor="center")
@@ -121,11 +119,12 @@ class Editor:
         customtkinter.CTkButton(bottom_frame, text="Draw frame", command=self.draw_frame).grid(row=2, column=1, padx=2, pady=2)
         # customtkinter.CTkButton(bottom_frame, text="Crop image", command=self.crop_image).grid(row=1, column=2)
         customtkinter.CTkButton(bottom_frame, text="Create polaroid", command=self.create_polaroid).grid(row=2, column=3)
-        rotate_left_img = ImageTk.PhotoImage(Image.open(r".\resources\icons\rotate_left.png"))
-        rotate_right_img = ImageTk.PhotoImage(Image.open(r".\resources\icons\rotate_right.png"))
-        # rotate_left_img = PhotoImage(file=r'resources\icons\rotate-left.jpg')
-        customtkinter.CTkButton(bottom_frame, text="Rotate left", image=rotate_left_img, compound="left", command=lambda: self.rotate_image(90)).grid(row=3, column=1, padx=2, pady=2)
-        customtkinter.CTkButton(bottom_frame, text="Rotate right", image=rotate_right_img, command=lambda: self.rotate_image(-90)).grid(row=3, column=3, padx=2, pady=2)
+        # rotate_left_img = ImageTk.PhotoImage(Image.open(r".\resources\icons\rotate_left.png"))
+        # rotate_right_img = ImageTk.PhotoImage(Image.open(r".\resources\icons\rotate_right.png"))
+        # customtkinter.CTkButton(bottom_frame, text="Rotate left", image=rotate_left_img, compound="left", command=lambda: self.rotate_image(90)).grid(row=3, column=1, padx=2, pady=2)
+        customtkinter.CTkButton(bottom_frame, text="Rotate left", compound="left", command=lambda: self.rotate_image(90)).grid(row=3, column=1, padx=2, pady=2)
+        # customtkinter.CTkButton(bottom_frame, text="Rotate right", image=rotate_right_img, command=lambda: self.rotate_image(-90)).grid(row=3, column=3, padx=2, pady=2)
+        customtkinter.CTkButton(bottom_frame, text="Rotate right", command=lambda: self.rotate_image(-90)).grid(row=3, column=3, padx=2, pady=2)        
         customtkinter.CTkButton(bottom_frame, text="Add space", command=self.add_space).grid(row=3, column=4)
     def get_format(self):
         if self.radio_choice.get() == 0: #Standard polaroid
@@ -160,7 +159,7 @@ class Editor:
         x0, y0, x1, y1 = self.frame_size(image_info.thumbnail)
         canvas = image_info.canvas
         canvas.delete(self.working_rectangle)
-        self.working_rectangle = canvas.create_rectangle(x0, y0, x1, y1, dash=(10, 10), width=1, stipple="gray25", fill="#CCFFFF")        
+        self.working_rectangle = canvas.create_rectangle(x0, y0, x1 - 1, y1 - 1, dash=(10, 10), width=1, stipple="gray25", fill="#CCFFFF") # added -1 to draw inside canvas   
         canvas.focus_set()
         canvas.bind("<Left>", self.move_left)
         canvas.bind("<Right>", self.move_right)
@@ -271,16 +270,12 @@ class Editor:
         image_tab = Frame(self.img_tabs)
         image_info = ImageInfo(image, image_path, image_tab)
         self.opened_images.append(image_info)
-        
         image_tk = image_info.image_tk
-
         image_panel = Canvas(image_tab, width=image_info.thumbnail.width, height=image_info.thumbnail.height, bd=0, background="cyan", highlightthickness=0)
         image_panel.pack()
         image_panel.image = image_tk
-
         image_panel.create_image(0, 0, image=image_tk, anchor="nw")    
         image_info.canvas = image_panel
-
         self.img_tabs.add(image_tab, text=image_info.image_name())
         self.img_tabs.select(image_tab)
 
@@ -301,6 +296,7 @@ class Editor:
         if not image:
             return
         x0, y0, x1, y1 = image.canvas.coords(self.working_rectangle)
+        print(f"x0: {x0}, y0: {y0}, x1: {x1}, y1: {y1}")
         image.crop(x0 + 1, y0 + 1, x1 - 1, y1 - 1) # x0 + 1, y0 + 1, x1 - 1, y1 - 1 reduces the frame on 1 px
         format = self.get_format()
         format = format[1]
@@ -359,7 +355,6 @@ class Editor:
                     sheet = SheetA4(format)
                     self.opened_sheets.append(sheet)
                     sheet.add_image_on_sheet(image.image, format)
-        
         self.save_sheets_as_pdf(formats)
 
     def save_sheets_as_pdf(self, formats):
@@ -378,7 +373,6 @@ class Editor:
                 if format == sheet.format:
                     sheets_of_this_format.append(sheet.sheet)
             sheets_of_this_format[0].save(f"{new_path} of {format}.pdf", save_all=True, append_images=sheets_of_this_format[1:], resolution=self.DPI)
-
         for sheet in self.opened_sheets:
             sheet.sheet.close()
             del sheet
@@ -397,7 +391,6 @@ class Editor:
             self.polaroid_bg_color = color_code[0]
         elif instance == "border_color":
             self.polaroid_border_color = color_code[0]
-
 
 if __name__ == "__main__":
     window = Editor (700, 700, (False, False))  

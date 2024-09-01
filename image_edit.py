@@ -17,7 +17,7 @@ class ImageEdit:
         # self.border_color = (215, 215, 215)
         # self.bg_color = (255, 255, 255)
 
-        self.scale_factor = 500 / max(self.image.width, self.image.height)
+        # self.scale_factor = 500 / max(self.image.width, self.image.height)
     
     def set_format (self, format):
         self.format = format
@@ -94,8 +94,9 @@ class ImageEdit:
     def crop(self, x0, y0, x1, y1):
         original_image_rectangle = []
         thumbnail_rectangle = [x0, y0, x1, y1]
+        scale_factor = 500 / max(self.image.width, self.image.height)
         for x in thumbnail_rectangle:
-            original_image_rectangle.append(x/self.scale_factor)
+            original_image_rectangle.append(x/scale_factor)
         # print(original_image_rectangle)
         # print(thumbnail_rectangle)
         self.image = self.image.crop(original_image_rectangle)
@@ -106,8 +107,8 @@ class ImageEdit:
             newImageWidth = int(self.image.width)
             newImageHeight = int(self.image.width/ratio)
         elif self.image.width/self.image.height <= ratio:
-            newImageWidth = int(self.image.height)
-            newImageHeight = int(self.image.height * ratio)
+            newImageWidth = int(self.image.height * ratio)
+            newImageHeight = int(self.image.height)
         newImage = Image.new("RGB", (newImageWidth, newImageHeight), bg_color)
         newImage.paste(self.image, (int(newImageWidth/2-self.image.width/2), int(newImageHeight/2-self.image.height/2)))
         self.image = newImage.copy()

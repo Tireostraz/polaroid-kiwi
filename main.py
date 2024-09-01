@@ -1,6 +1,5 @@
 from image_editor import Editor
 
-PhotoEditor = Editor(500, 500)
+PhotoEditor = Editor(700, 700, (False, False))
 #PyPhotoEditor.createChildWindow(200, 200)
 PhotoEditor.run()
-
