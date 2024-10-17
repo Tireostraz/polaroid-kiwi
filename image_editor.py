@@ -151,7 +151,7 @@ class Editor:
                 format = "Standard H"
                 return [ratio, format]
             elif self.radio_choice.get() == 5: #Mini instax
-                ratio = 46/62
+                ratio = 46/61
                 format = "Mini instax"
                 return [ratio, format]
         else:
