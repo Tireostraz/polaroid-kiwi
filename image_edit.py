@@ -44,6 +44,34 @@ class ImageEdit:
             bottom = int(15 * self.DPM)
             image_width = int(90 * self.DPM)
             image_heigth = int(55 * self.DPM)
+        elif self.format == "Mini instax":
+            top = int(7 * self.DPM)
+            left = right = int(4 * self.DPM)
+            bottom = int(17 * self.DPM)
+            image_width = int(46 * self.DPM)
+            image_heigth = int(62 * self.DPM)
+
+        #5mm border:
+        if self.format == "Standard bordered":
+            top = left = right = bottom = int(4 * self.DPM)
+            image_width = int(75 * self.DPM) - (right+left)
+            image_heigth = int(100 * self.DPM) - (top+bottom)
+            self.format = "Standard"
+        elif self.format == "Mini bordered":
+            top = left = right = bottom = int(4 * self.DPM)
+            image_width = int(55 * self.DPM) - (right+left)
+            image_heigth = int(90 * self.DPM) - (top+bottom)
+            self.format = "Mini"       
+        elif self.format == "Max bordered":
+            top = left = right = bottom = int(4 * self.DPM)
+            image_width = int(90 * self.DPM) - (right+left)
+            image_heigth = int(100 * self.DPM) - (top+bottom)
+            self.format = "Max"
+        elif self.format == "Standard H bordered":
+            top = left = right = bottom = int(4 * self.DPM)
+            image_width = int(100 * self.DPM) - (right+left)
+            image_heigth = int(75 * self.DPM) - (top+bottom)
+            self.format = "Standard H"
         self.image = self.image.resize((image_width, image_heigth))
         self.add_padding(top, left, bottom, right, bg_color)
         self.add_border(self.border_size, border_color)
