@@ -117,6 +117,7 @@ class Editor:
         customtkinter.CTkCheckBox(bottom_frame, text="4mm border", onvalue="on", offvalue="off", variable=self.border_var).grid(row=0, column=4)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=4, text="Standard H").grid(row=1, column=0)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=5, text="Mini instax").grid(row=1, column=1)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=6, text="10 x 15").grid(row=1, column=2)
         customtkinter.CTkCheckBox(bottom_frame, text="Auto frame", onvalue="on", offvalue="off").grid(row=2, column=0)
         customtkinter.CTkButton(bottom_frame, text="Draw frame", command=self.draw_frame).grid(row=2, column=1, padx=2, pady=2)
         # customtkinter.CTkButton(bottom_frame, text="Crop image", command=self.crop_image).grid(row=1, column=2)
@@ -153,6 +154,10 @@ class Editor:
             elif self.radio_choice.get() == 5: #Mini instax
                 ratio = 46/61
                 format = "Mini instax"
+                return [ratio, format]
+            elif self.radio_choice.get() == 6: #10 x 15 horizontal
+                ratio = 15/10
+                format = "15 x 10"
                 return [ratio, format]
         else:
             border = 4

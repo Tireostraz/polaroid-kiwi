@@ -50,6 +50,10 @@ class ImageEdit:
             bottom = int(17 * self.DPM)
             image_width = int(46 * self.DPM)
             image_heigth = int(62 * self.DPM)
+        elif self.format == "15 x 10":
+            top = bottom = left = right = 0
+            image_width = int(150 * self.DPM)
+            image_heigth = int(100 * self.DPM)
 
         #5mm border:
         if self.format == "Standard bordered":
