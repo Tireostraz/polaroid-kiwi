@@ -54,6 +54,12 @@ class ImageEdit:
             top = bottom = left = right = 0
             image_width = int(150 * self.DPM)
             image_heigth = int(100 * self.DPM)
+        elif self.format == "Photo garland":
+            top = int(10 * self.DPM)
+            bottom = int(17 * self.DPM)
+            right = left = int(5 * self.DPM)
+            image_width = int(65 * self.DPM)
+            image_heigth = int(73 * self.DPM)
 
         #5mm border:
         if self.format == "Standard bordered":
