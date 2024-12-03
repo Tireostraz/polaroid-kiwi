@@ -13,6 +13,7 @@ class SheetA4:
         elif format == "15 x 10":
             self.sheet = Image.new("RGB", (int(150 * self.DPM), int(100 * self.DPM)), self.bg_color) #horizontal 10 x 15 sheet
 
+
         else:
             self.sheet = Image.new("RGB", (int(297 * self.DPM), int(210 * self.DPM)), self.bg_color) #horizontal A4 sheet
         sheet_thumbnail = self.sheet.copy()
@@ -20,14 +21,20 @@ class SheetA4:
         sheet_thumbnail.thumbnail(self.MAX_SIZE)
         sheet_thumbnail = ImageTk.PhotoImage(sheet_thumbnail)
 
+
         self.occupied = False
         self.left_padding = 4 * self.DPM
         self.top_padding = 4 * self.DPM
         self.width_occupied = self.left_padding
         self.height_occupied = self.top_padding
 
+
     def add_image_on_sheet(self, image, format):
-        if format == "15 x 10":
+        if format == "A4":
+            self.sheet.paste(image, (0, 0))
+            self.occupied = True
+            return
+        elif format == "15 x 10":
             self.sheet.paste(image, (0, 0))
             self.occupied = True
             return
@@ -43,8 +50,6 @@ class SheetA4:
         elif width_left < image.width + 4 * self.DPM:
             self.height_occupied += image.height - 1 #for 1 px border
             self.width_occupied = self.left_padding
-        
-
 
 
     

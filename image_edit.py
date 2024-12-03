@@ -60,8 +60,12 @@ class ImageEdit:
             right = left = int(5 * self.DPM)
             image_width = int(65 * self.DPM)
             image_heigth = int(73 * self.DPM)
+        elif self.format == "A4":
+            top = bottom = left = right = 0
+            image_width = int(297 * self.DPM)
+            image_heigth = int(210 * self.DPM)    
 
-        #5mm border:
+        #4mm border:
         if self.format == "Standard bordered":
             top = left = right = bottom = int(4 * self.DPM)
             image_width = int(75 * self.DPM) - (right+left)
@@ -79,6 +83,32 @@ class ImageEdit:
             self.format = "Max"
         elif self.format == "Standard H bordered":
             top = left = right = bottom = int(4 * self.DPM)
+            image_width = int(100 * self.DPM) - (right+left)
+            image_heigth = int(75 * self.DPM) - (top+bottom)
+            self.format = "Standard H"
+
+        #No border        
+        if self.format == "Standard unbordered":
+            top = left = right = bottom = int(0 * self.DPM)
+            image_width = int(75 * self.DPM) - (right+left)
+            image_heigth = int(100 * self.DPM) - (top+bottom)
+            self.format = "Standard"
+        elif self.format == "Mini unbordered":
+            top = left = right = bottom = int(0 * self.DPM)
+            image_width = int(55 * self.DPM) - (right+left)
+            image_heigth = int(90 * self.DPM) - (top+bottom)
+            self.format = "Mini"
+        elif self.format == "Square unbordered":
+            top = left = right = bottom = int(0 * self.DPM)
+            image_width = int(80 * self.DPM)
+            image_heigth = int(80 * self.DPM)   
+        elif self.format == "Max unbordered":
+            top = left = right = bottom = int(0 * self.DPM)
+            image_width = int(90 * self.DPM) - (right+left)
+            image_heigth = int(100 * self.DPM) - (top+bottom)
+            self.format = "Max"
+        elif self.format == "Standard H unbordered":
+            top = left = right = bottom = int(0 * self.DPM)
             image_width = int(100 * self.DPM) - (right+left)
             image_heigth = int(75 * self.DPM) - (top+bottom)
             self.format = "Standard H"

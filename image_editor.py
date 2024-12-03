@@ -114,12 +114,14 @@ class Editor:
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=2, text="Square").grid(row=0, column=2)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=3, text="Max").grid(row=0, column=3)
         self.border_var = customtkinter.StringVar(value="off")
+        self.frame_var = customtkinter.StringVar(value="off")
         customtkinter.CTkCheckBox(bottom_frame, text="4mm border", onvalue="on", offvalue="off", variable=self.border_var).grid(row=0, column=4)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=4, text="Standard H").grid(row=1, column=0)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=5, text="Mini instax").grid(row=1, column=1)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=6, text="10 x 15").grid(row=1, column=2)
         customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=7, text="Photo garland").grid(row=1, column=3)
-        customtkinter.CTkCheckBox(bottom_frame, text="Auto frame", onvalue="on", offvalue="off").grid(row=2, column=0)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=8, text="A4").grid(row=1, column=4)
+        customtkinter.CTkCheckBox(bottom_frame, text="No frame", onvalue="on", offvalue="off", variable=self.frame_var).grid(row=2, column=0)
         customtkinter.CTkButton(bottom_frame, text="Draw frame", command=self.draw_frame).grid(row=2, column=1, padx=2, pady=2)
         # customtkinter.CTkButton(bottom_frame, text="Crop image", command=self.crop_image).grid(row=1, column=2)
         customtkinter.CTkButton(bottom_frame, text="Create polaroid", command=self.create_polaroid).grid(row=2, column=3)
@@ -131,7 +133,51 @@ class Editor:
         customtkinter.CTkButton(bottom_frame, text="Rotate right", command=lambda: self.rotate_image(-90)).grid(row=3, column=3, padx=2, pady=2)        
         customtkinter.CTkButton(bottom_frame, text="Add space", command=self.add_space).grid(row=3, column=4)
     def get_format(self):
-        if self.border_var.get() == "off":
+        if self.border_var.get() == "on":
+            border = 4
+            if self.radio_choice.get() == 0: #Standard polaroid 4mm border
+                ratio = (75-border*2)/(100-border*2)
+                format = "Standard bordered"
+                return [ratio, format]
+            elif self.radio_choice.get() == 1: #Mini 4mm border
+                ratio = (55-border*2)/(90-border*2)
+                format = "Mini bordered"
+                return [ratio, format]
+            elif self.radio_choice.get() == 2: #Square 4mm border
+                ratio = 1
+                format = "Square"
+                return [ratio, format]
+            elif self.radio_choice.get() == 3: #Max 4mm border
+                ratio = (90-border*2)/(100-border*2)
+                format = "Max bordered"
+                return [ratio, format]            
+            elif self.radio_choice.get() == 4: #Standard Horizontal 4mm border
+                ratio = (100-border*2)/(75-border*2)
+                format = "Standard H bordered"
+                return [ratio, format]            
+        elif self.frame_var.get == "on":
+            border = 0
+            if self.radio_choice.get() == 0: #Standard polaroid 4mm border
+                ratio = (75-border*2)/(100-border*2)
+                format = "Standard unbordered"
+                return [ratio, format]
+            elif self.radio_choice.get() == 1: #Mini 4mm border
+                ratio = (55-border*2)/(90-border*2)
+                format = "Mini unbordered"
+                return [ratio, format]
+            elif self.radio_choice.get() == 2: #Square 4mm border
+                ratio = 1
+                format = "Square unbordered"
+                return [ratio, format]
+            elif self.radio_choice.get() == 3: #Max 4mm border
+                ratio = (90-border*2)/(100-border*2)
+                format = "Max unbordered"
+                return [ratio, format]            
+            elif self.radio_choice.get() == 4: #Standard Horizontal 4mm border
+                ratio = (100-border*2)/(75-border*2)
+                format = "Standard H unbordered"
+                return [ratio, format]
+        else:
             if self.radio_choice.get() == 0: #Standard polaroid
                 ratio = 5/6
                 format = "Standard"
@@ -164,27 +210,9 @@ class Editor:
                 ratio = 65/73
                 format = "Photo garland"
                 return [ratio, format]
-        else:
-            border = 4
-            if self.radio_choice.get() == 0: #Standard polaroid 4mm border
-                ratio = (75-border*2)/(100-border*2)
-                format = "Standard bordered"
-                return [ratio, format]
-            elif self.radio_choice.get() == 1: #Mini 4mm border
-                ratio = (55-border*2)/(90-border*2)
-                format = "Mini bordered"
-                return [ratio, format]
-            elif self.radio_choice.get() == 2: #Square 4mm border
-                ratio = 1
-                format = "Square"
-                return [ratio, format]
-            elif self.radio_choice.get() == 3: #Max 4mm border
-                ratio = (90-border*2)/(100-border*2)
-                format = "Max bordered"
-                return [ratio, format]            
-            elif self.radio_choice.get() == 4: #Standard Horizontal 4mm border
-                ratio = (100-border*2)/(75-border*2)
-                format = "Standard H bordered"
+            elif self.radio_choice.get() == 8: #A4
+                ratio = 297/210
+                format = "A4"
                 return [ratio, format]
         
     def draw_frame(self):
