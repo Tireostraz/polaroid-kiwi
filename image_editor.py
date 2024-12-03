@@ -155,11 +155,12 @@ class Editor:
                 ratio = (100-border*2)/(75-border*2)
                 format = "Standard H bordered"
                 return [ratio, format]            
-        elif self.frame_var.get == "on":
+        elif self.frame_var.get() == "on":
             border = 0
             if self.radio_choice.get() == 0: #Standard polaroid 4mm border
                 ratio = (75-border*2)/(100-border*2)
                 format = "Standard unbordered"
+                print(format)
                 return [ratio, format]
             elif self.radio_choice.get() == 1: #Mini 4mm border
                 ratio = (55-border*2)/(90-border*2)
