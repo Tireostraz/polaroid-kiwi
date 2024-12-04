@@ -100,8 +100,9 @@ class ImageEdit:
             self.format = "Mini"
         elif self.format == "Square unbordered":
             top = left = right = bottom = int(0 * self.DPM)
-            image_width = int(80 * self.DPM)
-            image_heigth = int(80 * self.DPM)   
+            image_width = int(90 * self.DPM) - (right+left)
+            image_heigth = int(90 * self.DPM) - (top+bottom)
+            self.format = "Square"
         elif self.format == "Max unbordered":
             top = left = right = bottom = int(0 * self.DPM)
             image_width = int(90 * self.DPM) - (right+left)
