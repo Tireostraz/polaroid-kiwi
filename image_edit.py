@@ -163,7 +163,9 @@ class ImageEdit:
     def crop(self, x0, y0, x1, y1):
         original_image_rectangle = []
         thumbnail_rectangle = [x0, y0, x1, y1]
-        scale_factor = 500 / max(self.image.width, self.image.height)
+        thumbnail_side_size = max(self.thumbnail.width, self.thumbnail.height)
+        scale_factor = thumbnail_side_size / max(self.image.width, self.image.height)
+        print(scale_factor)
         for x in thumbnail_rectangle:
             original_image_rectangle.append(x/scale_factor)
         # print(original_image_rectangle)
