@@ -27,6 +27,7 @@ class Editor:
     def init(self):
         self.root.title("Photo Editor")
         # self.root.iconbitmap("resources/icons/icon.ico")
+        self.side_menu_open = False
         self.opened_images = []
         self.opened_sheets = []
         self.radio_choice = IntVar(value=0)
@@ -98,9 +99,14 @@ class Editor:
         self.root.configure(menu=menu_bar)
 
     def drawWigets(self):
-        top_frame = customtkinter.CTkFrame(self.root, width=600, height=600)
-        top_frame.pack(expand=True)
-        bottom_frame = customtkinter.CTkFrame(self.root)
+        side_menu = customtkinter.CTkFrame(self.root, width=50, fg_color="lightblue", border_width=0)
+        side_menu.pack(side=LEFT, fill="y")
+        customtkinter.CTkButton(side_menu, text="≡", width=50, command=self.toggle_side_menu).pack(side=TOP, pady=10)
+        main_frame = customtkinter.CTkFrame(self.root)
+        main_frame.pack(expand=True, fill=BOTH)
+        top_frame = customtkinter.CTkFrame(main_frame, width=600, height=600)
+        top_frame.pack(expand=True, fill=BOTH)
+        bottom_frame = customtkinter.CTkFrame(main_frame)
         bottom_frame.pack()
         self.img_tabs = Notebook(top_frame)
         self.img_tabs.enable_traversal()
@@ -132,6 +138,7 @@ class Editor:
         # customtkinter.CTkButton(bottom_frame, text="Rotate right", image=rotate_right_img, command=lambda: self.rotate_image(-90)).grid(row=3, column=3, padx=2, pady=2)
         customtkinter.CTkButton(bottom_frame, text="Rotate right", command=lambda: self.rotate_image(-90)).grid(row=3, column=3, padx=2, pady=2)        
         customtkinter.CTkButton(bottom_frame, text="Add space", command=self.add_space).grid(row=3, column=4)
+
     def get_format(self):
         if self.border_var.get() == "on":
             border = 4
@@ -455,6 +462,11 @@ class Editor:
             self.polaroid_bg_color = color_code[0]
         elif instance == "border_color":
             self.polaroid_border_color = color_code[0]
+    
+    def toggle_side_menu(self):
+        if not self.side_menu_open:
+            pass
+
 
 if __name__ == "__main__":
     window = Editor (700, 700, (False, False))  
