@@ -113,6 +113,17 @@ class ImageEdit:
             image_width = int(100 * self.DPM) - (right+left)
             image_heigth = int(75 * self.DPM) - (top+bottom)
             self.format = "Standard H"
+        else:
+            size = self.format.split()
+            if size[0] != "Custom":
+                pass
+            else:
+                # format = "Custom " + widthEntry.get() + " " + heightEntry.get() + " " + borderEntry.get() + " " + botborderEntry.get()
+                top = left = right = int(float(size[3]) * self.DPM)
+                bottom = int(float(size[4]) * self.DPM)
+                image_width = int(float(size[1]) * self.DPM) - (right+left)
+                image_heigth = int(float(size[2]) * self.DPM) - (top+bottom)
+
         self.image = self.image.resize((image_width, image_heigth))
         self.add_padding(top, left, bottom, right, bg_color)
         self.add_border(self.border_size, border_color)

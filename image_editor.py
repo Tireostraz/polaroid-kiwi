@@ -102,6 +102,13 @@ class Editor:
         side_menu = customtkinter.CTkFrame(self.root, width=50, fg_color="lightblue", border_width=0)
         side_menu.pack(side=LEFT, fill="y")
         customtkinter.CTkButton(side_menu, text="≡", width=50, command=self.toggle_side_menu).pack(side=TOP, pady=10)
+        self.side_menu_RB = customtkinter.CTkRadioButton(side_menu, variable=self.radio_choice, value=9, text="Custom", command=lambda: self.toggle_customInput(True))
+        self.side_menu_widthEntry = customtkinter.CTkEntry(side_menu, placeholder_text="Ширина, мм")
+        self.side_menu_heightEntry = customtkinter.CTkEntry(side_menu, placeholder_text="Высота, мм")
+        self.side_menu_borderEntry = customtkinter.CTkEntry(side_menu, placeholder_text="Ширина поля, мм")
+        self.side_menu_botborderEntry = customtkinter.CTkEntry(side_menu, placeholder_text="Ширина ниж. поля, мм")
+
+
         main_frame = customtkinter.CTkFrame(self.root)
         main_frame.pack(expand=True, fill=BOTH)
         top_frame = customtkinter.CTkFrame(main_frame, width=600, height=600)
@@ -115,18 +122,18 @@ class Editor:
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(1, weight=1)
         self.root.columnconfigure(1, weight=1)
-        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=0, text="Standard").grid(row=0, column=0, padx=2, pady=2)
-        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=1, text="Mini").grid(row=0, column=1)
-        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=2, text="Square").grid(row=0, column=2)
-        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=3, text="Max").grid(row=0, column=3)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=0, text="Standard", command=lambda: self.toggle_customInput(False)).grid(row=0, column=0, padx=2, pady=2)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=1, text="Mini", command=lambda: self.toggle_customInput(False)).grid(row=0, column=1)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=2, text="Square", command=lambda: self.toggle_customInput(False)).grid(row=0, column=2)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=3, text="Max", command=lambda: self.toggle_customInput(False)).grid(row=0, column=3)
         self.border_var = customtkinter.StringVar(value="off")
         self.frame_var = customtkinter.StringVar(value="off")
         customtkinter.CTkCheckBox(bottom_frame, text="4mm border", onvalue="on", offvalue="off", variable=self.border_var).grid(row=0, column=4)
-        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=4, text="Standard H").grid(row=1, column=0)
-        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=5, text="Mini instax").grid(row=1, column=1)
-        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=6, text="10 x 15").grid(row=1, column=2)
-        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=7, text="Photo garland").grid(row=1, column=3)
-        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=8, text="A4").grid(row=1, column=4)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=4, text="Standard H", command=lambda: self.toggle_customInput(False)).grid(row=1, column=0)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=5, text="Mini instax", command=lambda: self.toggle_customInput(False)).grid(row=1, column=1)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=6, text="10 x 15", command=lambda: self.toggle_customInput(False)).grid(row=1, column=2)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=7, text="Photo garland", command=lambda: self.toggle_customInput(False)).grid(row=1, column=3)
+        customtkinter.CTkRadioButton(bottom_frame, variable=self.radio_choice, value=8, text="A4", command=lambda: self.toggle_customInput(False)).grid(row=1, column=4)
         customtkinter.CTkCheckBox(bottom_frame, text="No frame", onvalue="on", offvalue="off", variable=self.frame_var).grid(row=2, column=0)
         customtkinter.CTkButton(bottom_frame, text="Draw frame", command=self.draw_frame).grid(row=2, column=1, padx=2, pady=2)
         # customtkinter.CTkButton(bottom_frame, text="Crop image", command=self.crop_image).grid(row=1, column=2)
@@ -222,6 +229,14 @@ class Editor:
                 ratio = 297/210
                 format = "A4"
                 return [ratio, format]
+            elif self.radio_choice.get() == 9: #Custom
+                if not self.side_menu_widthEntry.get() or not self.side_menu_heightEntry.get() or not self.side_menu_borderEntry.get() or not self.side_menu_botborderEntry.get():
+                    mb.showerror("Ошибка", "Не указан размер фото или ввод не является числом")
+                    pass
+                ratio = float(self.side_menu_widthEntry.get())/float(self.side_menu_heightEntry.get())
+                format = "Custom " + self.side_menu_widthEntry.get() + " " + self.side_menu_heightEntry.get() + " " + self.side_menu_borderEntry.get() + " " + self.side_menu_botborderEntry.get()
+                return [ratio, format]
+            
         
     def draw_frame(self):
         image_info = self.current_image()
@@ -465,8 +480,31 @@ class Editor:
     
     def toggle_side_menu(self):
         if not self.side_menu_open:
-            pass
-
+            self.side_menu_RB.pack()
+            self.side_menu_widthEntry.pack()
+            self.side_menu_heightEntry.pack()
+            self.side_menu_borderEntry.pack()
+            self.side_menu_botborderEntry.pack()
+            self.side_menu_open = True
+        else:
+            self.side_menu_RB.pack_forget()
+            self.side_menu_widthEntry.pack_forget()
+            self.side_menu_heightEntry.pack_forget()
+            self.side_menu_borderEntry.pack_forget()
+            self.side_menu_botborderEntry.pack_forget()
+            self.side_menu_open = False
+    
+    def toggle_customInput(self, state):
+        if state == False:
+            self.side_menu_widthEntry.configure(fg_color = "light gray", state = DISABLED)
+            self.side_menu_heightEntry.configure(fg_color = "light gray", state = DISABLED)
+            self.side_menu_borderEntry.configure(fg_color = "light gray", state = DISABLED)
+            self.side_menu_botborderEntry.configure(fg_color = "light gray", state = DISABLED)
+        else:
+            self.side_menu_widthEntry.configure(fg_color = "white", state = NORMAL)
+            self.side_menu_heightEntry.configure(fg_color = "white", state = NORMAL)
+            self.side_menu_borderEntry.configure(fg_color = "white", state = NORMAL)
+            self.side_menu_botborderEntry.configure(fg_color = "white", state = NORMAL)
 
 if __name__ == "__main__":
     window = Editor (700, 700, (False, False))  
