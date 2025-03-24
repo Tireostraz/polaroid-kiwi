@@ -4,8 +4,9 @@ from tkinter import messagebox as mb
 from tkinter.ttk import Notebook
 from tkinter import colorchooser
 from PDF_view_window import ChildWindow
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageCms
 from pillow_heif import register_heif_opener #for heic images
+from io import BytesIO
 import os
 import customtkinter
 
@@ -38,6 +39,10 @@ class Editor:
         self.polaroid_bg_color = (255, 255, 255)
         self.polaroid_border_color = (225, 225, 225)
         self.AdobeRGB = r".\resources\icc\AdobeRGB1998.icc"
+
+        # Добавлено для управления вкладками
+        self.max_visible_tabs = 5  # Лимит отображаемых вкладок
+        self.current_tab_index = 0  # Индекс активной вкладки
 
     def find_screen_center(self, width, height):
         screen_width = self.root.winfo_screenwidth()
@@ -75,7 +80,7 @@ class Editor:
         file_bar.add_command(label="Save", command=self.save_current_image)
         file_bar.add_command(label="Save as...", command=self.save_image_as)
         file_bar.add_command(label="Export all as PDF", command=self.export_all)
-        file_bar.add_command(label="Convert ICC to AdobeRGB", command=self.convert_icc)
+        file_bar.add_command(label="Convert ICC to...", command=self.convert_icc)
         file_bar.add_separator()
         file_bar.add_command(label="Close", command=self.close_image)
         file_bar.add_command(label="Close all", command=self.close_images)
@@ -118,6 +123,19 @@ class Editor:
         self.img_tabs = Notebook(top_frame)
         self.img_tabs.enable_traversal()
         self.img_tabs.pack(fill="none", expand=1, anchor="center")
+        nav_frame = customtkinter.CTkFrame(main_frame)
+        nav_frame.pack()
+        
+        self.back_button = customtkinter.CTkButton(nav_frame, text="Back", command=self.prev_tab)
+        self.back_button.pack(side=LEFT, padx=5, pady=5)
+        
+        self.counter_label = customtkinter.CTkLabel(nav_frame, text="Images: 0")
+        self.counter_label.pack(side=LEFT, padx=5, pady=5)
+        
+        self.forward_button = customtkinter.CTkButton(nav_frame, text="Forward", command=self.next_tab)
+        self.forward_button.pack(side=LEFT, padx=5, pady=5)
+
+
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(1, weight=1)
@@ -145,6 +163,29 @@ class Editor:
         # customtkinter.CTkButton(bottom_frame, text="Rotate right", image=rotate_right_img, command=lambda: self.rotate_image(-90)).grid(row=3, column=3, padx=2, pady=2)
         customtkinter.CTkButton(bottom_frame, text="Rotate right", command=lambda: self.rotate_image(-90)).grid(row=3, column=3, padx=2, pady=2)        
         customtkinter.CTkButton(bottom_frame, text="Add space", command=self.add_space).grid(row=3, column=4)
+
+    def update_tabs(self):
+        """ Обновляет отображаемые вкладки и счетчик """
+        self.img_tabs.forget("all")
+        start = max(0, self.current_tab_index)
+        end = min(len(self.opened_images), start + self.max_visible_tabs)
+
+        for image_info in self.opened_images[start:end]:
+            self.img_tabs.add(image_info.tab, text=image_info.image_name())
+
+        self.counter_label.configure(text=f"Images: {len(self.opened_images)}")
+
+    def next_tab(self):
+        """ Переключение вперед """
+        if len(self.opened_images) > self.max_visible_tabs:
+            self.current_tab_index = (self.current_tab_index + 1) % len(self.opened_images)
+            self.update_tabs()
+
+    def prev_tab(self):
+        """ Переключение назад """
+        if len(self.opened_images) > self.max_visible_tabs:
+            self.current_tab_index = (self.current_tab_index - 1) % len(self.opened_images)
+            self.update_tabs()
 
     def get_format(self):
         if self.border_var.get() == "on":
@@ -231,9 +272,9 @@ class Editor:
                 return [ratio, format]
             elif self.radio_choice.get() == 9: #Custom
                 if not self.side_menu_widthEntry.get() or not self.side_menu_heightEntry.get() or not self.side_menu_borderEntry.get() or not self.side_menu_botborderEntry.get():
-                    mb.showerror("Ошибка", "Не указан размер фото или ввод не является числом")
+                    mb.showerror("Ошибка", "Хачапурик, нажми на нолики! Я тебя кохаю")
                     pass
-                ratio = float(self.side_menu_widthEntry.get())/float(self.side_menu_heightEntry.get())
+                ratio = (float(self.side_menu_widthEntry.get())-float(self.side_menu_borderEntry.get())*2)/(float(self.side_menu_heightEntry.get())-float(self.side_menu_borderEntry.get())-float(self.side_menu_botborderEntry.get()))
                 format = "Custom " + self.side_menu_widthEntry.get() + " " + self.side_menu_heightEntry.get() + " " + self.side_menu_borderEntry.get() + " " + self.side_menu_botborderEntry.get()
                 return [ratio, format]
             
@@ -348,8 +389,37 @@ class Editor:
     
     def convert_icc(self):
         image_info = self.current_image()
-        tab_index = self.img_tabs.index(image_info.tab)
-        image_info.convert_icc(self.AdobeRGB)
+        if not image_info:
+            mb.showerror("Error", "No image is opened.")
+            return
+
+        profile_path = fd.askopenfilename(
+            title="Select ICC Profile",
+            filetypes=[("ICC Profiles", "*.icc;*.icm")]
+        )
+
+        if not profile_path:
+            return  # Пользователь отменил выбор
+
+        try:
+            img = image_info.image
+            srgb_icc = ImageCms.createProfile('sRGB')
+            orig_icc = image_info.current_icc or srgb_icc
+
+            print(orig_icc)
+            print(profile_path, srgb_icc)
+            img = ImageCms.profileToProfile(img, orig_icc, profile_path, outputMode=img.mode)
+
+             # Обновляем изображение и ICC-профиль
+            image_info.image = img
+            image_info.current_icc = profile_path
+
+            # Обновляем интерфейс (миниатюра обновится автоматически)
+            self.update_image(image_info)
+            mb.showinfo("Success", "ICC profile successfully applied.")
+        except Exception as e:
+            mb.showerror("Error", f"Failed to apply ICC profile:\n{e}")
+
 
     def add_new_image(self, image_path):
         image = Image.open(image_path)

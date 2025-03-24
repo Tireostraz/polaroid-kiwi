@@ -14,6 +14,15 @@ class ImageEdit:
         self.DPI = 300  # pixels in inch
         self.DPM = self.DPI/25.4 # pixels in mm
         self.border_size = 1
+        self.icc_bytes = image.info.get("icc_profile") or b""
+        if self.icc_bytes:
+            self.current_icc = ImageCms.ImageCmsProfile(BytesIO(self.image.info.get('icc_profile')))
+        else:
+            self.current_icc = None
+        print(self.current_icc)
+        self.mode = 'RGB'
+
+
         # self.border_color = (215, 215, 215)
         # self.bg_color = (255, 255, 255)
 
@@ -129,14 +138,14 @@ class ImageEdit:
         self.add_border(self.border_size, border_color)
     
     def add_padding(self, top, left, bottom, right, bg_color):
-        new_image = Image.new("RGB", (self.image.width + left + right, self.image.height + top + bottom), bg_color)
+        new_image = Image.new(self.mode, (self.image.width + left + right, self.image.height + top + bottom), bg_color)
         new_image.paste(self.image, (left, top))
         self.image = new_image.copy()
         self.thumbnail = new_image.copy()
         self.thumbnail.thumbnail(self.thumbnail_size)
 
     def add_border(self, border_size, border_color):
-        border = Image.new("RGB",  (self.image.width + border_size * 2, self.image.height + border_size * 2), border_color)
+        border = Image.new(self.mode,  (self.image.width + border_size * 2, self.image.height + border_size * 2), border_color)
         border.paste(self.image, (border_size, border_size))
         self.image = border.copy()
 
@@ -145,8 +154,8 @@ class ImageEdit:
 
     def rotate(self, degrees):
         self.image = self.image.rotate(degrees, expand=True)
-        self.thumbnail = self.image.copy()
-        self.thumbnail.thumbnail(self.thumbnail_size)
+        """ self.thumbnail = self.image.copy()
+        self.thumbnail.thumbnail(self.thumbnail_size) """
     
     def convert_icc(self, icc):
         print(self.image.info)
@@ -163,6 +172,10 @@ class ImageEdit:
     def update_image_on_canvas(self):
         if self.canvas is None:
             raise RuntimeError("Canvas of image not given")
+        
+         # Обновляем миниатюру на основе текущего изображения
+        self.thumbnail = self.image.copy()
+        self.thumbnail.thumbnail(self.thumbnail_size)  # Укажи нужный размер миниатюры
         
         self.image_tk = ImageTk.PhotoImage(self.thumbnail) 
         image_tk = self.image_tk
@@ -191,7 +204,7 @@ class ImageEdit:
         elif self.image.width/self.image.height <= ratio:
             newImageWidth = int(self.image.height * ratio)
             newImageHeight = int(self.image.height)
-        newImage = Image.new("RGB", (newImageWidth, newImageHeight), bg_color)
+        newImage = Image.new(self.mode, (newImageWidth, newImageHeight), bg_color)
         newImage.paste(self.image, (int(newImageWidth/2-self.image.width/2), int(newImageHeight/2-self.image.height/2)))
         self.image = newImage.copy()
         print(f"image width:{self.image.width}, new image width: {newImageWidth}")
