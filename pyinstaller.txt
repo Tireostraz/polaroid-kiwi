@@ -1,0 +1,1 @@
+pyinstaller --onefile --add-data "resources/icc;resources/icc" --add-data "resources/icons;resources/icons" --icon=resources/icons/icon.ico main.py

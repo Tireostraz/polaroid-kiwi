@@ -8,11 +8,23 @@ from PIL import Image, ImageTk, ImageCms
 from pillow_heif import register_heif_opener #for heic images
 from io import BytesIO
 import os
+import sys
 import customtkinter
-
 
 from image_info import ImageInfo
 from sheetA4 import SheetA4
+
+def get_resource_path(relative_path):
+    """ Возвращает правильный путь к ресурсам, даже если программа запущена как .exe """
+    if getattr(sys, 'frozen', False):  # Если программа скомпилирована в .exe
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+#AdobeRGB1998
+icc_path = get_resource_path("resources/icc/AdobeRGB1998.icc")
+icon_path = get_resource_path("resources/icons/icon.ico")
 
 class Editor:
     def __init__(self, width, height, resizable=(True, True)):
@@ -27,7 +39,7 @@ class Editor:
     
     def init(self):
         self.root.title("Photo Editor")
-        # self.root.iconbitmap("resources/icons/icon.ico")
+        self.root.iconbitmap(icon_path)
         self.side_menu_open = False
         self.opened_images = []
         self.opened_sheets = []
@@ -38,7 +50,7 @@ class Editor:
         self.DPI = 300
         self.polaroid_bg_color = (255, 255, 255)
         self.polaroid_border_color = (225, 225, 225)
-        self.AdobeRGB = r".\resources\icc\AdobeRGB1998.icc"
+        self.default_icc = icc_path
 
         # Добавлено для управления вкладками
         self.max_visible_tabs = 5  # Лимит отображаемых вкладок
@@ -80,7 +92,8 @@ class Editor:
         file_bar.add_command(label="Save", command=self.save_current_image)
         file_bar.add_command(label="Save as...", command=self.save_image_as)
         file_bar.add_command(label="Export all as PDF", command=self.export_all)
-        file_bar.add_command(label="Convert ICC to...", command=self.convert_icc)
+        file_bar.add_command(label="Convert ICC to...", command=self.change_image_icc)
+        file_bar.add_command(label="Choose default ICC", command=self.choose_default_icc)
         file_bar.add_separator()
         file_bar.add_command(label="Close", command=self.close_image)
         file_bar.add_command(label="Close all", command=self.close_images)
@@ -92,6 +105,7 @@ class Editor:
         rotate_bar = Menu(edit_bar, tearoff=0)
         edit_bar.add_cascade(label="Rotate", menu=rotate_bar)
         rotate_bar.add_command(label="Rotate left 90", command=lambda: self.rotate_image(90))
+        edit_bar.add_command(label='Change to grayscale', command=self.set_grayscale)
 
         #Options menubar
         options_bar = Menu(menu_bar, tearoff=0)
@@ -128,15 +142,16 @@ class Editor:
         nav_frame = customtkinter.CTkFrame(main_frame)
         nav_frame.pack()
         
-        self.back_button = customtkinter.CTkButton(nav_frame, text="Back", command=self.prev_tab)
-        self.back_button.pack(side=LEFT, padx=5, pady=5)
+        """ self.back_button = customtkinter.CTkButton(nav_frame, text="Back", command=self.prev_tab)
+        self.back_button.pack(side=LEFT, padx=5, pady=5) """ 
         
         self.counter_label = customtkinter.CTkLabel(nav_frame, text="Images: 0")
         self.counter_label.pack(side=LEFT, padx=5, pady=5)
+        """ self.currentTab_label = customtkinter.CTkLabel(nav_frame, text="Current tab: 0")
+        self.currentTab_label.pack(side=LEFT, padx=5, pady=5)
         
         self.forward_button = customtkinter.CTkButton(nav_frame, text="Forward", command=self.next_tab)
-        self.forward_button.pack(side=LEFT, padx=5, pady=5)
-
+        self.forward_button.pack(side=LEFT, padx=5, pady=5) """
 
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
@@ -166,33 +181,34 @@ class Editor:
         customtkinter.CTkButton(bottom_frame, text="Rotate right", command=lambda: self.rotate_image(-90)).grid(row=3, column=3, padx=2, pady=2)        
         customtkinter.CTkButton(bottom_frame, text="Add space", command=self.add_space).grid(row=3, column=4)
 
-    def update_tabs(self):
-        
+    def update_tabs(self):        
         # Удаляем все вкладки
-        for tab in self.img_tabs.tabs():
+        """ for tab in self.img_tabs.tabs():
             self.img_tabs.forget(tab)
+        
+        if len(self.opened_images)<self.max_visible_tabs:
+            end = len(self.opened_images)
+            start = 0
+        else:
+            end = max(self.current_tab_index, self.max_visible_tabs)
+            start = end - self.max_visible_tabs"""        
 
-        start = max(0, self.current_tab_index)
-        end = min(len(self.opened_images), start + self.max_visible_tabs)
-
-        # 🔹 Добавляем только нужные вкладки
-        for image_info in self.opened_images[start:end]:
+        # 🔹 Добавляем только нужные вкладки self.opened_images[start:end]:
+        for image_info in self.opened_images:
             self.img_tabs.add(image_info.tab, text=image_info.image_name())
 
         # 🔹 Обновляем счетчик
         self.counter_label.configure(text=f"Images: {len(self.opened_images)}")
 
+        """ self.currentTab_label.configure(text=f"Current tab: {self.current_tab_index+1}") """
+
     def next_tab(self):
-        """ Переключение вперед """
-        if len(self.opened_images) > self.max_visible_tabs:
-            self.current_tab_index = (self.current_tab_index + 1) % len(self.opened_images)
-            self.update_tabs()
+        self.current_tab_index +=1
+        self.update_tabs()
 
     def prev_tab(self):
-        """ Переключение назад """
-        if len(self.opened_images) > self.max_visible_tabs:
-            self.current_tab_index = (self.current_tab_index - 1) % len(self.opened_images)
-            self.update_tabs()
+        self.current_tab_index -=1
+        self.update_tabs()
 
     def get_format(self):
         if self.border_var.get() == "on":
@@ -393,13 +409,8 @@ class Editor:
             image_info.image.close()
             self.img_tabs.forget(image_info.tab)
         self.opened_images.clear()
-    
-    def convert_icc(self):
-        image_info = self.current_image()
-        if not image_info:
-            mb.showerror("Error", "No image is opened.")
-            return
 
+    def choose_default_icc(self):
         profile_path = fd.askopenfilename(
             title="Select ICC Profile",
             filetypes=[("ICC Profiles", "*.icc;*.icm")]
@@ -407,25 +418,68 @@ class Editor:
 
         if not profile_path:
             return  # Пользователь отменил выбор
+        self.default_icc = profile_path
+    
+    def change_image_icc(self):
+        profile_path = fd.askopenfilename(
+            title="Select ICC Profile",
+            filetypes=[("ICC Profiles", "*.icc;*.icm")]
+        )
+        if not profile_path:
+            return  # Пользователь отменил выбор
+        
+        self.convert_icc(None, profile_path)
+    
+    def convert_icc(self, image_info=None, icc_path=None):
+        if not image_info:
+            image_info = self.current_image()
+            if not image_info:
+                mb.showerror("Error", "No image is opened.")
+                return
+            
+        img = image_info.original_image.copy() # Используем копию оригинала        
+        img_mode =  img.mode
+        print(img_mode)
+
+        if not img_mode =='RGB':
+             return
+        
+        if not icc_path:
+            icc_path = self.default_icc
 
         try:
-            img = image_info.image
             srgb_icc = ImageCms.createProfile('sRGB')
-            orig_icc = image_info.current_icc or srgb_icc
 
-            print(orig_icc)
-            print(profile_path, srgb_icc)
-            img = ImageCms.profileToProfile(img, orig_icc, profile_path, outputMode=img.mode)
+            icc_bytes = img.info.get("icc_profile") or b""
+                        
+            if icc_bytes:
+                current_icc = ImageCms.ImageCmsProfile(BytesIO(img.info.get('icc_profile')))
+            else:
+                current_icc = srgb_icc
+
+            print(f'{current_icc} -> {icc_path}')
+            img = ImageCms.profileToProfile(img, current_icc, icc_path, outputMode=img.mode)
 
              # Обновляем изображение и ICC-профиль
             image_info.image = img
-            image_info.current_icc = profile_path
+            image_info.current_icc = ImageCms.getOpenProfile(icc_path)
+            print(f'profile changed to {image_info.current_icc}')
 
             # Обновляем интерфейс (миниатюра обновится автоматически)
             self.update_image(image_info)
-            mb.showinfo("Success", "ICC profile successfully applied.")
+            #mb.showinfo("Success", "ICC profile successfully applied.")
         except Exception as e:
             mb.showerror("Error", f"Failed to apply ICC profile:\n{e}")
+
+    def set_grayscale(self):
+        image_info = self.current_image()
+        if not image_info:
+                mb.showerror("Error", "No image is opened.")
+                return
+        
+        image_info.image = image_info.image.convert('L')
+        image_info.mode = 'L'
+        self.update_image(image_info)
 
 
     def add_new_image(self, image_path):
@@ -441,10 +495,8 @@ class Editor:
         image_panel.create_image(0, 0, image=image_tk, anchor="nw")    
         image_info.canvas = image_panel
 
-        """ self.img_tabs.add(image_tab, text=image_info.image_name())
-        self.img_tabs.select(image_tab) """
-
         self.update_tabs()  # 🔹 Обновляем вкладки перед выбором
+        self.convert_icc(image_info, self.default_icc)
 
     # 🔹 Проверяем, была ли добавлена вкладка в Notebook
         if image_tab in self.img_tabs.tabs():
@@ -476,7 +528,10 @@ class Editor:
         self.update_image(image)
         
     def save_image_as(self):
-        current_tab, image_path, image = self.current_image()
+        image_info = self.current_image()
+        current_tab = image_info.tab
+        image_path = image_info.path
+        image = image_info.image
         if not current_tab:
             return
         tab_index = self.img_tabs.index(current_tab)
@@ -493,8 +548,19 @@ class Editor:
         elif old_ext != new_ext:
             mb.showerror("Error", f"Новое расширение картинки не равно старому, {old_ext} != {new_ext}")
             return
-        image.save(new_path + new_ext)
-        image.close()
+        
+        profile = image_info.current_icc
+        print(profile)
+
+        if image_info.mode == 'L':
+            image.save(new_path + new_ext)
+            image.close()
+        elif (image_info.mode == 'RGB') and (new_ext == '.jpeg', '.png', '.tiff', '.webp'):
+            image.save(new_path + new_ext, icc_profile=profile.tobytes())
+            image.close()
+        else:
+            image.save(new_path + new_ext)
+            image.close()
 
         del self.opened_images[tab_index]
         self.img_tabs.forget(tab_index)
@@ -590,6 +656,7 @@ class Editor:
             self.side_menu_heightEntry.configure(fg_color = "white", state = NORMAL)
             self.side_menu_borderEntry.configure(fg_color = "white", state = NORMAL)
             self.side_menu_botborderEntry.configure(fg_color = "white", state = NORMAL)
+
 
 if __name__ == "__main__":
     window = Editor (700, 700, (False, False))  

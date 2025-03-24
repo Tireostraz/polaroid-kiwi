@@ -14,11 +14,12 @@ class ImageEdit:
         self.DPI = 300  # pixels in inch
         self.DPM = self.DPI/25.4 # pixels in mm
         self.border_size = 1
-        self.icc_bytes = image.info.get("icc_profile") or b""
+        self.current_icc = None
+        """ self.icc_bytes = image.info.get("icc_profile") or b""
         if self.icc_bytes:
             self.current_icc = ImageCms.ImageCmsProfile(BytesIO(self.image.info.get('icc_profile')))
         else:
-            self.current_icc = None
+            self.current_icc = None """
         print(self.current_icc)
         self.mode = 'RGB'
 
@@ -138,14 +139,21 @@ class ImageEdit:
         self.add_border(self.border_size, border_color)
     
     def add_padding(self, top, left, bottom, right, bg_color):
-        new_image = Image.new(self.mode, (self.image.width + left + right, self.image.height + top + bottom), bg_color)
+        if self.mode == 'L':
+            new_image = Image.new(self.mode, (self.image.width + left + right, self.image.height + top + bottom), 255)
+        else:
+            new_image = Image.new(self.mode, (self.image.width + left + right, self.image.height + top + bottom), bg_color)
         new_image.paste(self.image, (left, top))
         self.image = new_image.copy()
         self.thumbnail = new_image.copy()
         self.thumbnail.thumbnail(self.thumbnail_size)
 
     def add_border(self, border_size, border_color):
-        border = Image.new(self.mode,  (self.image.width + border_size * 2, self.image.height + border_size * 2), border_color)
+        if self.mode == 'L':
+            border = Image.new(self.mode,  (self.image.width + border_size * 2, self.image.height + border_size * 2), 200)
+        else:
+            border = Image.new(self.mode,  (self.image.width + border_size * 2, self.image.height + border_size * 2), border_color)            
+
         border.paste(self.image, (border_size, border_size))
         self.image = border.copy()
 
