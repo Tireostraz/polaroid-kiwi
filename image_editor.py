@@ -120,9 +120,11 @@ class Editor:
         top_frame.pack(expand=True, fill=BOTH)
         bottom_frame = customtkinter.CTkFrame(main_frame)
         bottom_frame.pack()
+
         self.img_tabs = Notebook(top_frame)
         self.img_tabs.enable_traversal()
         self.img_tabs.pack(fill="none", expand=1, anchor="center")
+
         nav_frame = customtkinter.CTkFrame(main_frame)
         nav_frame.pack()
         
@@ -165,14 +167,19 @@ class Editor:
         customtkinter.CTkButton(bottom_frame, text="Add space", command=self.add_space).grid(row=3, column=4)
 
     def update_tabs(self):
-        """ Обновляет отображаемые вкладки и счетчик """
-        self.img_tabs.forget("all")
+        
+        # Удаляем все вкладки
+        for tab in self.img_tabs.tabs():
+            self.img_tabs.forget(tab)
+
         start = max(0, self.current_tab_index)
         end = min(len(self.opened_images), start + self.max_visible_tabs)
 
+        # 🔹 Добавляем только нужные вкладки
         for image_info in self.opened_images[start:end]:
             self.img_tabs.add(image_info.tab, text=image_info.image_name())
 
+        # 🔹 Обновляем счетчик
         self.counter_label.configure(text=f"Images: {len(self.opened_images)}")
 
     def next_tab(self):
@@ -426,14 +433,22 @@ class Editor:
         image_tab = Frame(self.img_tabs)
         image_info = ImageInfo(image, image_path, image_tab)
         self.opened_images.append(image_info)
+
         image_tk = image_info.image_tk
         image_panel = Canvas(image_tab, width=image_info.thumbnail.width, height=image_info.thumbnail.height, bd=0, background="cyan", highlightthickness=0)
         image_panel.pack()
         image_panel.image = image_tk
         image_panel.create_image(0, 0, image=image_tk, anchor="nw")    
         image_info.canvas = image_panel
-        self.img_tabs.add(image_tab, text=image_info.image_name())
-        self.img_tabs.select(image_tab)
+
+        """ self.img_tabs.add(image_tab, text=image_info.image_name())
+        self.img_tabs.select(image_tab) """
+
+        self.update_tabs()  # 🔹 Обновляем вкладки перед выбором
+
+    # 🔹 Проверяем, была ли добавлена вкладка в Notebook
+        if image_tab in self.img_tabs.tabs():
+            self.img_tabs.select(image_tab)  # 🔹 Теперь безопасно выбирать вкладку
 
     def update_image(self, image_info):
         image_info.update_image_on_canvas()
