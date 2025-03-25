@@ -52,6 +52,10 @@ class Editor:
         self.polaroid_border_color = (225, 225, 225)
         self.default_icc = icc_path
 
+        self.crop_start = None  # Начальная точка выделения
+        self.crop_rectangle = None  # Прямоугольник выделения
+        self.history = {}  # История изменений (для undo)
+
         # Добавлено для управления вкладками
         self.max_visible_tabs = 5  # Лимит отображаемых вкладок
         self.current_tab_index = 0  # Индекс активной вкладки
@@ -106,6 +110,9 @@ class Editor:
         edit_bar.add_cascade(label="Rotate", menu=rotate_bar)
         rotate_bar.add_command(label="Rotate left 90", command=lambda: self.rotate_image(90))
         edit_bar.add_command(label='Change to grayscale', command=self.set_grayscale)
+        edit_bar.add_command(label="Select & Crop", command=self.enable_selection)
+        edit_bar.add_command(label="Undo", command=self.undo_last_action)
+        
 
         #Options menubar
         options_bar = Menu(menu_bar, tearoff=0)
@@ -656,6 +663,68 @@ class Editor:
             self.side_menu_heightEntry.configure(fg_color = "white", state = NORMAL)
             self.side_menu_borderEntry.configure(fg_color = "white", state = NORMAL)
             self.side_menu_botborderEntry.configure(fg_color = "white", state = NORMAL)
+
+    def enable_selection(self):
+        """ Включает режим выделения для обрезки изображения """
+        image_info = self.current_image()
+        if not image_info:
+            return
+        
+        canvas = image_info.canvas
+        canvas.bind("<ButtonPress-1>", self.start_selection)
+        canvas.bind("<B1-Motion>", self.update_selection)
+        canvas.bind("<ButtonRelease-1>", self.finish_selection)
+        self.history[image_info] = image_info.image.copy()  # Сохраняем предыдущее состояние для undo
+
+    def start_selection(self, event):
+        """ Начало выделения области для обрезки """
+        image_info = self.current_image()
+        if not image_info:
+            return
+        
+        self.crop_start = (event.x, event.y)
+        canvas = image_info.canvas
+        if self.crop_rectangle:
+            canvas.delete(self.crop_rectangle)
+        self.crop_rectangle = canvas.create_rectangle(event.x, event.y, event.x, event.y, outline="light blue", width=1)
+
+    def update_selection(self, event):
+        """ Обновление прямоугольника во время движения мыши """
+        image_info = self.current_image()
+        if not image_info or not self.crop_start:
+            return
+        
+        x0, y0 = self.crop_start
+        canvas = image_info.canvas
+        canvas.coords(self.crop_rectangle, x0, y0, event.x, event.y)
+
+    def finish_selection(self, event):
+        """ Завершение выделения и вызов функции обрезки """
+        image_info = self.current_image()
+        if not image_info or not self.crop_start:
+            return
+
+        x0, y0 = self.crop_start
+        x1, y1 = event.x, event.y
+
+        # Ограничиваем область выделения границами изображения
+        x0 = max(0, min(x0, image_info.thumbnail.width))
+        y0 = max(0, min(y0, image_info.thumbnail.height))
+        x1 = max(0, min(x1, image_info.thumbnail.width))
+        y1 = max(0, min(y1, image_info.thumbnail.height))
+
+        self.crop_start = None
+        
+        if x0 != x1 and y0 != y1:  # Если выделение корректное
+            image_info.crop(x0, y0, x1, y1)
+            self.update_image(image_info)
+
+    def undo_last_action(self):
+        """ Откатывает последнее действие, если возможно """
+        image_info = self.current_image()
+        if image_info in self.history:
+            image_info.image = self.history.pop(image_info)  # Восстанавливаем предыдущее изображение
+            self.update_image(image_info)
 
 
 if __name__ == "__main__":

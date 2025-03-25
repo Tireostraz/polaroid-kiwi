@@ -203,7 +203,15 @@ class ImageEdit:
         # print(original_image_rectangle)
         # print(thumbnail_rectangle)
         self.image = self.image.crop(original_image_rectangle)
-        self.thumbnail = self.thumbnail.crop(thumbnail_rectangle)
+        self.thumbnail = self.thumbnail.crop(thumbnail_rectangle) 
+    
+    """ def crop(self, x0, y0, x1, y1):
+        x0, x1 = min(x0, x1), max(x0, x1)  # Упорядочиваем координаты
+        y0, y1 = min(y0, y1), max(y0, y1)
+
+        self.image = self.image.crop((x0, y0, x1, y1))
+        self.thumbnail = self.image.copy()
+        self.thumbnail.thumbnail(self.thumbnail_size) """
     
     def add_space(self, ratio, bg_color):
         if self.image.width/self.image.height > ratio:
